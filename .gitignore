@@ -1,3 +1,7 @@
+###personal###
+logs/
+.idea/
+
 ### Vert.x ###
 .vertx/
 
