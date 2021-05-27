@@ -4,7 +4,7 @@
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>pers.hynemankan</groupId>
+  <groupId>per.hynemankan</groupId>
   <artifactId>bilibot</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
@@ -22,7 +22,7 @@
     <vertx.version>4.0.3</vertx.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
 
-    <main.verticle>Application.MainVerticle</main.verticle>
+    <main.verticle>per.hynemankan.vertx.bilibot.MainVerticle</main.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
   </properties>
 
