@@ -1,4 +1,4 @@
-package per.hynemankan.vertx.bilibot;
+package per.hynemankan.vertx.bilibot.verticle;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
