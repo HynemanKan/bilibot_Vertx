@@ -12,4 +12,17 @@ public enum ConfigurationKeys {
   PASSWORD,
   MAX_POOL_SIZE,
   MAX_WAITING_HANDLERS,
+  /**
+   * mysql
+   */
+  /**
+   * mysql
+   */
+  MYSQL_ADDRESS,
+  MYSQL_PORT,
+  MYSQL_USERNAME,
+  MYSQL_PASSWORD,
+  MYSQL_MAX_POOL_SIZE,
+  MYSQL_DATABASE,
+  MYSQL_TIMEOUT,
 }

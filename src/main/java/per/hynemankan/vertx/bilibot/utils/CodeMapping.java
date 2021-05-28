@@ -9,7 +9,8 @@ public enum CodeMapping {
    */
 
   SUCCESS("0","SUCCESS"),
-  TRY_DOUBLE_LOGIN("1","login already");
+  TRY_DOUBLE_LOGIN("1","login already"),
+  UNKNOWN_ERROR("-1","unknown error");
   /**
    * 返回码
    */

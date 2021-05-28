@@ -13,5 +13,7 @@ public enum EventBusChannels {
   GET_DISTRIBUTED_LOCK,
   RELEASE_DISTRIBUTED_LOCK,
   REDIS_CONNECT,
-
+  //mysql setting
+  SET_MYSQL_OPTIONS,
+  INIT_MYSQL,
 }

@@ -1,6 +1,7 @@
 package per.hynemankan.vertx.bilibot.handlers.common;
 
 //import io.vertx.core.CompositeFuture;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 //import io.vertx.core.json.JsonObject;
@@ -8,6 +9,7 @@ import io.vertx.redis.client.RedisAPI;
 import java.util.Collections;
 
 import lombok.extern.slf4j.Slf4j;
+import per.hynemankan.vertx.bilibot.db.MysqlUtils;
 import per.hynemankan.vertx.bilibot.db.RedisUtils;
 
 /***
@@ -65,8 +67,9 @@ public class HealthChecker {
       if (healthy) {
         // redis 健康测试
         Future<String> redisFuture = checkRedis();
+        Future<String> mysqlFuture = checkMysql();
         // mysql 健康测试
-        redisFuture.onSuccess(r -> {
+        CompositeFuture.all(redisFuture,mysqlFuture).onSuccess(r -> {
           healthy = true;
           log.debug("Healthy check success!");
           result.complete();
@@ -75,11 +78,16 @@ public class HealthChecker {
           result.fail(f.getCause());
         });
       } else {
-        // 尝试重新初始化连接
-        result.fail(LOG_REDIS_STATUS_FAILED);
+        if (STATUS_FAILED.equals(redisHealthy)) {
+          log.warn("redis Fail");
+        }
+        if (STATUS_FAILED.equals(mysqlHealthy)) {
+          log.warn("mysql Fail");
+        }
+
+        log.warn("already Unhealth,skip health check");
       }
     });
-
   }
 
 
@@ -106,9 +114,27 @@ public class HealthChecker {
           log.debug("Healthy check success!");
           result.complete();
         } else {
-          result.fail("Check redis failed");
+          log.error(LOG_REDIS_STATUS_FAILED);
+          result.fail(LOG_REDIS_STATUS_FAILED);
         }
       }));
+  }
+
+  private static Future<String> checkMysql() {
+
+    return Future.future(result ->
+
+      MysqlUtils.getMysqlClient()
+        .query("select 1")
+        .execute(lm -> {
+          if (lm.succeeded()) {
+            setMysqlHealthy(STATUS_WORKING);
+            result.complete();
+          } else {
+            log.error(LOG_MYSQL_STATUS_FAILED);
+            result.fail(LOG_MYSQL_STATUS_FAILED);
+          }
+        }));
   }
 
 }
