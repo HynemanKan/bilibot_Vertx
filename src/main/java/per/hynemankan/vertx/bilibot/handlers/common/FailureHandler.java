@@ -3,7 +3,6 @@ package per.hynemankan.vertx.bilibot.handlers.common;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.api.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import per.hynemankan.vertx.bilibot.utils.CodeMapping;
 
@@ -15,9 +14,9 @@ public class FailureHandler implements Handler<RoutingContext> {
   public void handle(RoutingContext context) {
 
     Throwable thrown = context.failure();
-    log.error("Request failed,{}", thrown.getCause().getMessage(), thrown);
+    log.warn(String.format("Request failed,%s",thrown.toString()));
     JsonObject response = CodeMapping.UNKNOWN_ERROR.toJson();
-    response.put("trackBack",thrown.getCause().getMessage());
+    response.put("trackBack",thrown.toString());
     context.response().end(response.toString());
   }
 }

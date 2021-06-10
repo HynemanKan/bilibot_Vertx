@@ -30,6 +30,9 @@ public enum CodeMapping {
       .put("code", this.code)
       .put("message", this.msg);
   }
+  public static JsonObject successResponse(JsonObject data){
+    return CodeMapping.SUCCESS.toJson().put("data",data);
+  }
 
   public String getMsg() {
     return msg;

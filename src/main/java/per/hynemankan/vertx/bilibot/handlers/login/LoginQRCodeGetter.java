@@ -6,14 +6,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.node.BooleanNode;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.redis.client.RedisAPI;
 import lombok.extern.slf4j.Slf4j;
 import per.hynemankan.vertx.bilibot.expection.UnhealthyException;
@@ -53,8 +51,7 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
             routingContext.fail(new WebClientException("Got illegal Url!", e));
             return;
           }
-          HttpRequest<Buffer> request = webClient.get(80, url.getHost(), url.getPath())
-            .expect(ResponsePredicate.status(200));
+          HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath());
           headerAdd(request);//请求头user-agent添加
           request.send().onSuccess(response->{
             JsonObject body = response.body().toJsonObject();
@@ -68,9 +65,7 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
               String.valueOf(GlobalConstants.RD_LOGIN_OAUTHKEY_TIMEOUT));
             RedisAPI.api(getClient()).set(list,ar->{});
             resData.put("url",QRCodeUrl);
-            JsonObject responseJson = CodeMapping.SUCCESS.toJson();
-            responseJson.put("data",resData);
-            routingContext.response().end(responseJson.toString());
+            routingContext.response().end(CodeMapping.successResponse(resData).toString());
           }).onFailure(response->{
             routingContext.fail(new WebClientException(response.getMessage()));
           });
