@@ -25,7 +25,7 @@ public class BaseInfoGetter implements Handler<RoutingContext> {
     GetBaseInfo.getBaseInfo(webClient).onSuccess(res->{
       routingContext.response().end(CodeMapping.successResponse(res).toString());
     }).onFailure(res->{
-      routingContext.fail(res.getCause());
+      routingContext.fail(res);
     });
   }
 }

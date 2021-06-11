@@ -2,6 +2,7 @@ package per.hynemankan.vertx.bilibot.handlers.login;
 
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -10,13 +11,11 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.redis.client.RedisAPI;
 import lombok.extern.slf4j.Slf4j;
+import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
 import per.hynemankan.vertx.bilibot.expection.UnhealthyException;
 import per.hynemankan.vertx.bilibot.expection.WebClientException;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
-import per.hynemankan.vertx.bilibot.utils.CodeMapping;
-import per.hynemankan.vertx.bilibot.utils.CookiesManager;
-import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
-import per.hynemankan.vertx.bilibot.utils.LoginStatus;
+import per.hynemankan.vertx.bilibot.utils.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,12 +23,17 @@ import java.util.Collections;
 
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
 import static per.hynemankan.vertx.bilibot.utils.HeaderAdder.headerAdd;
+
+/**
+ * @author hyneman
+ */
 @Slf4j
 public class LoginStatusGetter implements Handler<RoutingContext>{
   private final WebClient webClient;
-
-  public LoginStatusGetter(WebClient webClient){
+  private final Vertx vertx;
+  public LoginStatusGetter(Vertx vertx, WebClient webClient){
     this.webClient = webClient;
+    this.vertx = vertx;
   }
   @Override
   public void handle(RoutingContext routingContext) {
@@ -59,15 +63,17 @@ public class LoginStatusGetter implements Handler<RoutingContext>{
             headerAdd(request);//请求头user-agent添加
             MultiMap formData = MultiMap.caseInsensitiveMultiMap();
             formData.set("oauthKey",oauthKey);
-            request.sendForm(formData).onSuccess(biliResponse->{
-              routingContext.response().end(CodeMapping.successResponse(dealResponse(biliResponse)).toString());
-              });
+            request.sendForm(formData).onSuccess(biliResponse->
+              routingContext.response().end(CodeMapping.successResponse(dealResponse(biliResponse)).toString())
+              ).onFailure(biliResponse->
+                routingContext.fail(biliResponse)
+            );
           }).onFailure(getRes->{
-            throw new RuntimeException("redis Fail");
+            throw new RedisAPIException();
           });
         }
       }).onFailure(res->{
-        throw new RuntimeException("redis Fail");
+        throw new RedisAPIException();
       });
   }
 
@@ -78,7 +84,15 @@ public class LoginStatusGetter implements Handler<RoutingContext>{
     if(response.getBoolean("status")){
       responseBody.put("loginStatus",LoginStatus.OAUTH_SUCCESS.name());
       log.info(String.format("cookies:%d", httpBody.cookies().size()));
-      CookiesManager.updateCookiesFormHttpBody(httpBody);
+      CookiesManager.updateCookiesFormHttpBody(httpBody).onSuccess(res->{
+        vertx.eventBus().request(EventBusChannels.START_MESSAGE_FETCH.name(),"",r->{
+          if(r.succeeded()){
+            log.info("Message fetch verticle start success!");
+          }else{
+            log.info(r.cause().toString());
+          }
+        });
+      });
       return responseBody;
     }else{
       switch (response.getInteger("data")){

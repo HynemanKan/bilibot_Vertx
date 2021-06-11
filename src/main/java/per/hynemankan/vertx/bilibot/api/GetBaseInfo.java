@@ -40,7 +40,7 @@ public class GetBaseInfo {
           res.fail(new WebClientException("webclient error"));
         });
       }).onFailure(ar->{
-        res.fail(ar.getCause());
+        res.fail(ar);
       });
     });
   }

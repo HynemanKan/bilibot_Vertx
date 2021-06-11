@@ -13,6 +13,7 @@ import per.hynemankan.vertx.bilibot.handlers.info.BaseInfoGetter;
 import per.hynemankan.vertx.bilibot.handlers.login.LoginQRCodeGetter;
 import per.hynemankan.vertx.bilibot.handlers.login.LoginStatusGetter;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
+import per.hynemankan.vertx.bilibot.utils.PageResources;
 
 @Slf4j
 public class MainVerticle extends AbstractVerticle {
@@ -29,8 +30,8 @@ public class MainVerticle extends AbstractVerticle {
     PingHandler pingHandler = new PingHandler();
     FailureHandler failureHandler = new FailureHandler();
 
-    LoginQRCodeGetter loginQRCodeGetter = new LoginQRCodeGetter(client);
-    LoginStatusGetter loginStatusGetter = new LoginStatusGetter(client);
+    LoginQRCodeGetter loginQRCodeGetter = new LoginQRCodeGetter(vertx,client);
+    LoginStatusGetter loginStatusGetter = new LoginStatusGetter(vertx,client);
 
     BaseInfoGetter baseInfoGetter = new BaseInfoGetter(client);
 
@@ -44,6 +45,10 @@ public class MainVerticle extends AbstractVerticle {
     router.get("/API/login/getLoginStatus").handler(loginStatusGetter).failureHandler(failureHandler);
     //info
     router.get("/API/info/baseInfo").handler(baseInfoGetter).failureHandler(failureHandler);
+    //page
+    router.get("/").handler(routingContext->
+      routingContext.response().end(PageResources.MAIN_PAGE)
+    ).failureHandler(failureHandler);
     // 启动Http server
     vertx.createHttpServer().requestHandler(router).listen(GlobalConstants.HTTP_PORT, r -> {
       if (r.succeeded()) {

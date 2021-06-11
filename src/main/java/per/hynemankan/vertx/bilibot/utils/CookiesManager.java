@@ -23,14 +23,15 @@ import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
  */
 @Slf4j
 public class CookiesManager {
-  public static void updateCookiesFormHttpBody(HttpResponse<Buffer> httpbody){
-    if (!HealthChecker.isHealthy()) {
-      throw new UnhealthyException();
-    }
-    JsonObject cookies = cookiesDecode(httpbody.cookies());
-    log.info(cookies.toString());
-    RedisAPI.api(getClient()).exists(Collections.singletonList(GlobalConstants.RD_LOGIN_COOKIES))
-      .onSuccess(res->{
+  public static Future<Void> updateCookiesFormHttpBody(HttpResponse<Buffer> httpbody){
+    return Future.future(response->{
+      if (!HealthChecker.isHealthy()) {
+        response.fail(new UnhealthyException());
+      }
+      JsonObject cookies = cookiesDecode(httpbody.cookies());
+      log.info(cookies.toString());
+      RedisAPI.api(getClient()).exists(Collections.singletonList(GlobalConstants.RD_LOGIN_COOKIES))
+        .onSuccess(res->{
           Boolean isExists = res.toBoolean();
           if(!isExists){
             List<String> list = Arrays.asList(
@@ -38,7 +39,9 @@ public class CookiesManager {
               cookies.toString(),
               GlobalConstants.TIME_S_MARK,
               String.valueOf(GlobalConstants.RD_LOGIN_COOKIES_TIMEOUT));
-            RedisAPI.api(getClient()).set(list,ar->{});
+            RedisAPI.api(getClient()).set(list,ar->{
+              response.complete();
+            });
           }else{
             RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(
               getRes->{
@@ -49,13 +52,15 @@ public class CookiesManager {
                   outCookies.toString(),
                   GlobalConstants.TIME_S_MARK,
                   String.valueOf(GlobalConstants.RD_LOGIN_COOKIES_TIMEOUT));
-                RedisAPI.api(getClient()).set(list,ar->{});
+                RedisAPI.api(getClient()).set(list,ar->{
+                  response.complete();
+                });
               });
           }
-      }).onFailure(res->{
-      throw new RuntimeException("redis Fail");
+        }).onFailure(res->{
+          response.fail(new RuntimeException("redis error"));
+      });
     });
-
   }
 
   /**
@@ -124,13 +129,12 @@ public class CookiesManager {
         .onSuccess(res->{
           Boolean isExists = res.toBoolean();
           if(!isExists){
-            throw new UnloginException();
+            result.fail(new UnloginException());
           }else{
             RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(getRes->{
               JsonObject cookies = new JsonObject(getRes.toString());
               String cookiesHeader = cookiesJoin(cookies);
               httpRequest.headers().set("cookie",cookiesHeader);
-              log.info(cookiesHeader);
               result.complete();
             }).onFailure(getRes->{
               result.fail(new RuntimeException("redis Fail"));

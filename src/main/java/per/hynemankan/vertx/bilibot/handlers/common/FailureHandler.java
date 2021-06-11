@@ -4,6 +4,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import lombok.extern.slf4j.Slf4j;
+import per.hynemankan.vertx.bilibot.expection.UnloginException;
 import per.hynemankan.vertx.bilibot.utils.CodeMapping;
 
 
@@ -15,6 +16,10 @@ public class FailureHandler implements Handler<RoutingContext> {
 
     Throwable thrown = context.failure();
     log.warn(String.format("Request failed,%s",thrown.toString()));
+    if(thrown instanceof UnloginException){
+      context.response().end(CodeMapping.REQUIRE_LOGIN.toJson().toString());
+      return;
+    }
     JsonObject response = CodeMapping.UNKNOWN_ERROR.toJson();
     response.put("trackBack",thrown.toString());
     context.response().end(response.toString());

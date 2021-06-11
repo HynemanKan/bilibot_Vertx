@@ -16,4 +16,9 @@ public enum EventBusChannels {
   //mysql setting
   SET_MYSQL_OPTIONS,
   INIT_MYSQL,
+  //messageFetch
+  START_MESSAGE_FETCH,
+  END_MESSAGE_FETCH,
+
+
 }

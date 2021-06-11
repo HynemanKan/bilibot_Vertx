@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -14,9 +15,11 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.redis.client.RedisAPI;
 import lombok.extern.slf4j.Slf4j;
+import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
 import per.hynemankan.vertx.bilibot.expection.UnhealthyException;
 import per.hynemankan.vertx.bilibot.expection.WebClientException;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
+import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.CodeMapping;
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
@@ -25,10 +28,11 @@ import static per.hynemankan.vertx.bilibot.utils.HeaderAdder.headerAdd;
 @Slf4j
 public class LoginQRCodeGetter implements Handler<RoutingContext>{
   private final WebClient webClient;
+  private final Vertx vertx;
 
 
-
-  public LoginQRCodeGetter(WebClient webClient){
+  public LoginQRCodeGetter(Vertx vertx, WebClient webClient){
+    this.vertx = vertx;
     this.webClient = webClient;
   }
 
@@ -44,6 +48,13 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
         Boolean isExists = res.toBoolean();
         if(isExists){
           routingContext.response().end(CodeMapping.TRY_DOUBLE_LOGIN.toJson().toString());
+          vertx.eventBus().request(EventBusChannels.START_MESSAGE_FETCH.name(),"", r->{
+            if(r.succeeded()){
+              log.info("Message fetch verticle start success!");
+            }else{
+              log.info(r.cause().toString());
+            }
+          });
         }else{
           try {
             url = new URL(GlobalConstants.BILI_LOGIN_QRCODE_GET_API);
@@ -71,7 +82,7 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
           });
         }
       }).onFailure(res->{
-        throw new RuntimeException("redis Fail");
+        throw new RedisAPIException();
     });
   }
 }

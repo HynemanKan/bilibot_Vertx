@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <link rel="icon" href="static/img/favicon.ico">
+  <title>登录</title>
+  <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Bootstrap core CSS -->
+  <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+            body {
+              padding-top: 20px;
+              padding-bottom: 20px;
+            }
+            @media (min-width: 768px) {
+              .container {
+                max-width: 730px;
+              }
+            }
+            .container-narrow > hr {
+              margin: 30px 0;
+            }
+
+        </style>
+  <![endif]-->
+</head>
+<body style="background-color:#FAFFF0;color: #292421;">
+<div class="container">
+  <div class="row">
+    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 col-lg-push-4 col-md-push-4 col-sm-push-4 col-xs-push-4">
+      <h2>请扫描登录</h2>
+      <div id="qrcode" style="height: 256px;width: 256px;"></div>
+      <p>剩余时间<span id="time"></span>s</p>
+      <p>登录状态:<span id="loginState"></span></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var lifeTime = 180;
+  function loop(){
+      lifeTime -=1
+      if (lifeTime<=0){
+          location.reload();
+      }
+      $("#time").text(lifeTime);
+      $.getJSON("/API/login/getLoginStatus",function (jsonData) {
+        console.log(jsonData);
+        if (jsonData.code==""){
+          loginStatus=jsonData.data.loginStatus;
+          if (loginStatus == "OAUTH_TOKEN_UNSCAN"){
+            $("#loginState").text("待扫码");
+          }else if(isScan == "OAUTH_TOKEN_UNCOMFIRMED"){
+            $("#loginState").text("未确认");
+          }else if(isScan =="OAUTH_SUCCESS"){
+            window.location.href='/state';
+          }else{
+            location.reload();
+          }
+        }
+      })
+  }
+
+
+  $.getJSON("/API/login/getQRCode",function(jsonData){
+      console.log(jsonData);
+      if(jsonData.code=="1"){
+        window.location.href='/state';
+      }
+      new QRCode(document.getElementById("qrcode"), {
+          text:jsonData.data.url,
+          width: 256,
+          height: 256,
+          colorDark : "#292421",
+          colorLight : "#FAFFF0",
+      });
+      setInterval(loop,1000)
+      })
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.verticle.MainVerticle;
 import per.hynemankan.vertx.bilibot.db.RedisUtils;
+import per.hynemankan.vertx.bilibot.verticle.MessageFetchVerticle;
 
 @Slf4j
 public class Application {
@@ -60,7 +61,8 @@ public class Application {
     Future<Void> mainFuture = deployVertical(MainVerticle.class, deploymentOptions);
     Future<Void> redisFuture = deployVertical(RedisUtils.class,deploymentOptions);
     Future<Void> mysqlFuture = deployVertical(MysqlUtils.class,deploymentOptions);
-    CompositeFuture.all(mainFuture,redisFuture,mysqlFuture)
+    Future<Void> messageFuture = deployMessageFetch();
+    CompositeFuture.all(mainFuture,redisFuture,mysqlFuture,messageFuture)
       .onSuccess(res->{
         HealthChecker.checkHealthy(vertx).onSuccess(ar->{
           log.info("health check pass, deploy success!");
@@ -71,6 +73,19 @@ public class Application {
       log.error("deploy failed!{}", res.getMessage(), res);
     });
 
+  }
+
+  private static Future<Void> deployMessageFetch(){
+    return Future.future(result->{
+      DeploymentOptions deploymentOptions= new DeploymentOptions().setInstances(1);
+      vertx.deployVerticle(MessageFetchVerticle.class,deploymentOptions,r->{
+        if (r.succeeded()) {
+          result.complete();
+        } else {
+          result.fail(r.cause());
+        }
+      });
+    });
   }
 
   private static Future<Void> deployVertical(Class<? extends Verticle> verticleClass, DeploymentOptions option) {
