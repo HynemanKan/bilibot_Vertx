@@ -39,6 +39,7 @@ public class UnreadChecker {
               if(!resData.getInteger("code").equals(0)){
                 log.warn(resData.toString());
                 response.fail(new WebClientException("webclinet error"));
+                return;
               }
               JsonObject dataBody = resData.getJsonObject("data");
               Integer unreadCount= dataBody.getInteger("unfollow_unread")+dataBody.getInteger("follow_unread");

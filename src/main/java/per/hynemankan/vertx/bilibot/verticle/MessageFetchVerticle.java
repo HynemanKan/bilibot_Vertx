@@ -16,6 +16,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   private boolean messageFetchStatus=false;
   private Long timerId;
   private WebClient client;
+  private Long LastFetchTimestamp;
 
   @Override
   public void start(Promise<Void> startPromise) {
@@ -28,6 +29,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
     vertx.eventBus().<String>consumer(EventBusChannels.START_MESSAGE_FETCH.name()).handler(this::startMessageFetch);
     vertx.eventBus().<String>consumer(EventBusChannels.END_MESSAGE_FETCH.name()).handler(this::endMessageFetch);
     log.info("Init message fetch success!");
+    LastFetchTimestamp = System.currentTimeMillis()*1000;
     startPromise.complete();
   }
 
