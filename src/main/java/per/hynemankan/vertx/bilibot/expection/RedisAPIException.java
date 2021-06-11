@@ -5,4 +5,7 @@ public class RedisAPIException extends RuntimeException{
   public RedisAPIException() {
     super(MSG, new Throwable(MSG));
   }
+  public RedisAPIException(String msg, Throwable thrown) {
+    super(msg, thrown);
+  }
 }

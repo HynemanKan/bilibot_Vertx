@@ -12,13 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import per.hynemankan.vertx.bilibot.expection.UnhealthyException;
 import per.hynemankan.vertx.bilibot.expection.UnloginException;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
+import per.hynemankan.vertx.bilibot.handlers.common.RedisLockHandler;
 
 import java.util.*;
 
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
 
 /**
- * cookies管理器
+ * cookies管理器 带并发锁
  * @author hyneman
  */
 @Slf4j
@@ -34,28 +35,40 @@ public class CookiesManager {
         .onSuccess(res->{
           Boolean isExists = res.toBoolean();
           if(!isExists){
-            List<String> list = Arrays.asList(
-              GlobalConstants.RD_LOGIN_COOKIES,
-              cookies.toString(),
-              GlobalConstants.TIME_S_MARK,
-              String.valueOf(GlobalConstants.RD_LOGIN_COOKIES_TIMEOUT));
-            RedisAPI.api(getClient()).set(list,ar->{
-              response.complete();
-            });
-          }else{
-            RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(
-              getRes->{
-                JsonObject oldCookies = new JsonObject(getRes.toString());
-                JsonObject outCookies = CookiesManager.updateCookies(oldCookies,cookies);
+            String redisOperationId = UUID.randomUUID().toString();
+            RedisLockHandler.getDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+              .onFailure(rs->response.fail(rs)).onSuccess(rs->{
                 List<String> list = Arrays.asList(
                   GlobalConstants.RD_LOGIN_COOKIES,
-                  outCookies.toString(),
+                  cookies.toString(),
                   GlobalConstants.TIME_S_MARK,
                   String.valueOf(GlobalConstants.RD_LOGIN_COOKIES_TIMEOUT));
                 RedisAPI.api(getClient()).set(list,ar->{
+                  RedisLockHandler.releaseDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+                    .onSuccess(re->{}).onFailure(re->response.fail(re));
                   response.complete();
-                });
               });
+            });
+          }else{
+            String redisOperationId = UUID.randomUUID().toString();
+            RedisLockHandler.getDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+              .onFailure(rs->response.fail(rs)).onSuccess(rs->{
+                RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(
+                  getRes->{
+                    JsonObject oldCookies = new JsonObject(getRes.toString());
+                    JsonObject outCookies = CookiesManager.updateCookies(oldCookies,cookies);
+                    List<String> list = Arrays.asList(
+                      GlobalConstants.RD_LOGIN_COOKIES,
+                      outCookies.toString(),
+                      GlobalConstants.TIME_S_MARK,
+                      String.valueOf(GlobalConstants.RD_LOGIN_COOKIES_TIMEOUT));
+                    RedisAPI.api(getClient()).set(list,ar->{
+                      RedisLockHandler.releaseDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+                        .onSuccess(re->{}).onFailure(re->response.fail(re));
+                      response.complete();
+                    });
+                });
+            });
           }
         }).onFailure(res->{
           response.fail(new RuntimeException("redis error"));
@@ -131,13 +144,19 @@ public class CookiesManager {
           if(!isExists){
             result.fail(new UnloginException());
           }else{
-            RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(getRes->{
-              JsonObject cookies = new JsonObject(getRes.toString());
-              String cookiesHeader = cookiesJoin(cookies);
-              httpRequest.headers().set("cookie",cookiesHeader);
-              result.complete();
-            }).onFailure(getRes->{
-              result.fail(new RuntimeException("redis Fail"));
+            String redisOperationId = UUID.randomUUID().toString();
+            RedisLockHandler.getDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+              .onFailure(rs->result.fail(rs)).onSuccess(rs->{
+                RedisAPI.api(getClient()).get(GlobalConstants.RD_LOGIN_COOKIES).onSuccess(getRes->{
+                  JsonObject cookies = new JsonObject(getRes.toString());
+                  String cookiesHeader = cookiesJoin(cookies);
+                  httpRequest.headers().set("cookie",cookiesHeader);
+                  RedisLockHandler.releaseDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
+                    .onSuccess(re->{}).onFailure(re->result.fail(re));
+                  result.complete();
+                }).onFailure(getRes->{
+                  result.fail(new RuntimeException("redis Fail"));
+                });
             });
           }
         }).onFailure(res->{

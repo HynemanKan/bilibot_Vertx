@@ -54,13 +54,14 @@
       $("#time").text(lifeTime);
       $.getJSON("/API/login/getLoginStatus",function (jsonData) {
         console.log(jsonData);
-        if (jsonData.code==""){
+        if (jsonData.code=="0"){
           loginStatus=jsonData.data.loginStatus;
+          console.log(loginStatus);
           if (loginStatus == "OAUTH_TOKEN_UNSCAN"){
             $("#loginState").text("待扫码");
-          }else if(isScan == "OAUTH_TOKEN_UNCOMFIRMED"){
+          }else if(loginStatus == "OAUTH_TOKEN_UNCOMFIRMED"){
             $("#loginState").text("未确认");
-          }else if(isScan =="OAUTH_SUCCESS"){
+          }else if(loginStatus =="OAUTH_SUCCESS"){
             window.location.href='/state';
           }else{
             location.reload();

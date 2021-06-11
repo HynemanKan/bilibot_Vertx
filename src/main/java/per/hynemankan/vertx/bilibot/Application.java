@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import per.hynemankan.vertx.bilibot.db.MysqlUtils;
 import per.hynemankan.vertx.bilibot.handlers.common.ExceptionHandler;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
+import per.hynemankan.vertx.bilibot.handlers.common.RedisLockHandler;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.verticle.MainVerticle;
 import per.hynemankan.vertx.bilibot.db.RedisUtils;
@@ -45,6 +46,7 @@ public class Application {
           new DeploymentOptions().setInstances(instances).setConfig(ar.result());
         vertx.exceptionHandler(new ExceptionHandler());
         deploy(deploymentOptions);
+        RedisLockHandler.init(vertx);
       });
 
     // 监听配置文件更改（5秒）
@@ -67,7 +69,7 @@ public class Application {
         HealthChecker.checkHealthy(vertx).onSuccess(ar->{
           log.info("health check pass, deploy success!");
         }).onFailure(ar->{
-          log.info("health check fail, deploy success!");
+          log.info("health check fail, deploy fail!");
         });
       }).onFailure(res->{
       log.error("deploy failed!{}", res.getMessage(), res);

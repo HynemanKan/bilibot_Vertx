@@ -57,13 +57,14 @@ public class PageResources {
     "      $(\"#time\").text(lifeTime);\n" +
     "      $.getJSON(\"/API/login/getLoginStatus\",function (jsonData) {\n" +
     "        console.log(jsonData);\n" +
-    "        if (jsonData.code==\"\"){\n" +
+    "        if (jsonData.code==\"0\"){\n" +
     "          loginStatus=jsonData.data.loginStatus;\n" +
+    "          console.log(loginStatus);\n" +
     "          if (loginStatus == \"OAUTH_TOKEN_UNSCAN\"){\n" +
     "            $(\"#loginState\").text(\"待扫码\");\n" +
-    "          }else if(isScan == \"OAUTH_TOKEN_UNCOMFIRMED\"){\n" +
+    "          }else if(loginStatus == \"OAUTH_TOKEN_UNCOMFIRMED\"){\n" +
     "            $(\"#loginState\").text(\"未确认\");\n" +
-    "          }else if(isScan ==\"OAUTH_SUCCESS\"){\n" +
+    "          }else if(loginStatus ==\"OAUTH_SUCCESS\"){\n" +
     "            window.location.href='/state';\n" +
     "          }else{\n" +
     "            location.reload();\n" +

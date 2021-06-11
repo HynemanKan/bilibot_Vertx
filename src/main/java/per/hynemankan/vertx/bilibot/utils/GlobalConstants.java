@@ -14,6 +14,7 @@ public class GlobalConstants {
   public static final Integer RD_LOGIN_OAUTHKEY_TIMEOUT=180;//EX
   public static final Integer RD_LOGIN_COOKIES_TIMEOUT=3600;//EX
   public static final String STATIC_PATH="C:\\Users\\hyneman\\Desktop\\project\\personal\\bilibot_Vertx\\staticPage";
+  public static final String COOKIES_LOCK = "BILI_COOKIES_LOCK";
   //web client
   public static final Integer BILI_PORT =80;
   public static final String REQUEST_HEADER =
