@@ -7,7 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 
-import static io.vertx.core.http.HttpMethod.LOCK;
+
+/**
+ * 并发锁管理
+ * @author hyneman
+ */
 @Slf4j
 public class RedisLockHandler {
   private static Vertx vertx;

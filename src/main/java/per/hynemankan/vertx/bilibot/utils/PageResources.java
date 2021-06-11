@@ -1,5 +1,8 @@
 package per.hynemankan.vertx.bilibot.utils;
 
+/**
+ * @author hyneman
+ */
 public class PageResources {
   public static final String MAIN_PAGE="<!DOCTYPE html>\n" +
     "<html lang=\"zh-CN\">\n" +
