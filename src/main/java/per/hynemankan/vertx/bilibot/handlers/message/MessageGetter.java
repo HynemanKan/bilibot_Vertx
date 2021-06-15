@@ -18,7 +18,7 @@ import java.net.URL;
 
 @Slf4j
 public class MessageGetter {
-  public static Future<JsonObject> getMessage(WebClient webClient,Long lastFetchTimestamp) {
+  public static Future<JsonObject> getMessageSession(WebClient webClient, Long lastFetchTimestamp) {
     return Future.future(response->{
       URL url;
       try {

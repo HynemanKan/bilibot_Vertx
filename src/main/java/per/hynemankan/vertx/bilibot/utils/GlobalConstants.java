@@ -3,7 +3,7 @@ package per.hynemankan.vertx.bilibot.utils;
 public class GlobalConstants {
   protected GlobalConstants() {
   }
-  public static final int HTTP_PORT = 8888;
+  public static final int HTTP_PORT = 8008;
 
   //redis
   public static final String TIME_S_MARK = "EX";
@@ -13,7 +13,6 @@ public class GlobalConstants {
   public static final String RD_LOGIN_OAUTHKEY="RD_LOGIN_OAUTHKEY";
   public static final Integer RD_LOGIN_OAUTHKEY_TIMEOUT=180;//EX
   public static final Integer RD_LOGIN_COOKIES_TIMEOUT=3600;//EX
-  public static final String STATIC_PATH="C:\\Users\\hyneman\\Desktop\\project\\personal\\bilibot_Vertx\\staticPage";
   public static final String COOKIES_LOCK = "BILI_COOKIES_LOCK";
   //web client
   public static final Integer BILI_PORT =80;
@@ -23,8 +22,9 @@ public class GlobalConstants {
   public static final String BILI_LOGIN_QRCODE_GET_API = "https://passport.bilibili.com/qrcode/getLoginUrl";
   public static final String BILI_LOGIN_STATUS_API="https://passport.bilibili.com/qrcode/getLoginInfo";
   public static final String BILI_INFO_BASE_INFO_API ="https://api.bilibili.com/x/web-interface/nav";
-  public static final String BILI_UNREAD_API="https://api.vc.bilibili.com/session_svr/v1/session_svr/single_unread";
+  public static final String BILI_MESSAGE_UNREAD_API ="https://api.vc.bilibili.com/session_svr/v1/session_svr/single_unread";
   public static final String BILI_MESSAGE_GET_API="https://api.vc.bilibili.com/session_svr/v1/session_svr/new_sessions";
+  public static final String BILI_MESSAGE_UPDATE_ACK="https://api.vc.bilibili.com/session_svr/v1/session_svr/update_ack";
   //message fetch
   public static final Integer MESSAGE_FETCH_PERIOD=1500;
 }

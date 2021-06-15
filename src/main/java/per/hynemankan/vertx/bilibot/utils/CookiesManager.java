@@ -136,7 +136,7 @@ public class CookiesManager {
    * @param httpRequest
    * @return
    */
-  public static Future<Void> headCookiesAdder(HttpRequest<Buffer> httpRequest){
+  public static Future<JsonObject> headCookiesAdder(HttpRequest<Buffer> httpRequest){
     return Future.future(result->{
       RedisAPI.api(getClient()).exists(Collections.singletonList(GlobalConstants.RD_LOGIN_COOKIES))
         .onSuccess(res->{
@@ -153,7 +153,7 @@ public class CookiesManager {
                   httpRequest.headers().set("cookie",cookiesHeader);
                   RedisLockHandler.releaseDistributionLock(GlobalConstants.COOKIES_LOCK,redisOperationId)
                     .onSuccess(re->{}).onFailure(re->result.fail(re));
-                  result.complete();
+                  result.complete(cookies);
                 }).onFailure(getRes->{
                   result.fail(new RuntimeException("redis Fail"));
                 });

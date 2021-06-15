@@ -1,7 +1,6 @@
 package per.hynemankan.vertx.bilibot.handlers.message;
 
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
@@ -24,7 +23,7 @@ public class UnreadChecker {
     return Future.future(response->{
       URL url;
       try {
-        url = new URL(GlobalConstants.BILI_UNREAD_API);
+        url = new URL(GlobalConstants.BILI_MESSAGE_UNREAD_API);
       } catch (MalformedURLException e) {
         response.fail(new WebClientException("Got illegal Url!", e));
         return;
