@@ -18,6 +18,7 @@ import per.hynemankan.vertx.bilibot.expection.TryDoubleStartPeriodicException;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageGetter;
 import per.hynemankan.vertx.bilibot.handlers.message.UpdateAlreadyReadHandler;
 import per.hynemankan.vertx.bilibot.plugin.helloWorld.HelloWorld;
+import per.hynemankan.vertx.bilibot.plugin.rediectTest.RediectTest;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.PluginStatus;
@@ -30,7 +31,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   private WebClient client;
   private Long lastFetchTimestamp;
   private HashMap<String,String> pluginMap=new HashMap<>();
-  private HashMap<String,Object> plugin = new HashMap<>();
+
   @Override
   public void start(Promise<Void> startPromise) {
     WebClientOptions options = new WebClientOptions()
@@ -48,8 +49,9 @@ public class MessageFetchVerticle extends AbstractVerticle {
   }
   private void pluginRegister(){
     HelloWorld helloWorld = new HelloWorld(vertx,client);
-    plugin.put(HelloWorld.TRIGGER,helloWorld);
+    RediectTest rediectTest = new RediectTest(vertx,client);
     pluginMap.put(HelloWorld.TRIGGER,HelloWorld.EVENT_BUS_CHANNEL);
+    pluginMap.put(RediectTest.TRIGGER,RediectTest.EVENT_BUS_CHANNEL);
   }
 
   private void startMessageFetch(Message<String> message){
@@ -88,11 +90,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   private void dealMessageSession(Object session){
     if(session instanceof JsonObject){
       Integer talkerId = ((JsonObject) session).getInteger("talker_id");
-      Integer unread = ((JsonObject) session).getInteger("unread_count");
       log.info(String.format("deal message from %d", talkerId));
-      if (unread>1){
-        log.info("unread >1 ignore old message");
-      }
       JsonObject message = ((JsonObject) session).getJsonObject("last_msg");
       dealMessage(message);
     }else{
@@ -173,7 +171,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
       packagedData.put(GlobalConstants.MESSAGE_BODY,message)
         .put(GlobalConstants.VARIATE,variates.getJsonObject(pluginAddress))
         .put(GlobalConstants.SHARE_VARIATE,variates.getJsonObject(GlobalConstants.SHARE_VARIATE));
-      vertx.eventBus().request(pluginAddress,message)
+      vertx.eventBus().request(pluginAddress,packagedData)
         .onFailure(err->log.warn(err.getMessage()))
         .onSuccess(response->{
           JsonObject pluginResponse = (JsonObject) response.body();
