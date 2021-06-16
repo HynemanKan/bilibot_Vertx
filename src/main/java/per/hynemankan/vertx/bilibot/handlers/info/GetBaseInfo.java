@@ -1,4 +1,4 @@
-package per.hynemankan.vertx.bilibot.api;
+package per.hynemankan.vertx.bilibot.handlers.info;
 
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;

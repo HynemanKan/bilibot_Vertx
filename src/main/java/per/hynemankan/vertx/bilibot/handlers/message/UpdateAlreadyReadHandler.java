@@ -28,7 +28,8 @@ public class UpdateAlreadyReadHandler {
       HttpRequest<Buffer> request =client.post(GlobalConstants.BILI_PORT,url.getHost(),url.getPath());
       HeaderAdder.headerAdd(request);
       CookiesManager.headCookiesAdder(request)
-        .onFailure(err->response.fail(err)).onSuccess(res->{
+        .onFailure(err->response.fail(err))
+        .onSuccess(res->{
           String csrfToken = res.getJsonObject("bili_jct").getString("value");
           MultiMap formBody = MultiMap.caseInsensitiveMultiMap();
           formBody.add("talker_id",talker.toString())
@@ -39,13 +40,15 @@ public class UpdateAlreadyReadHandler {
             .add("csrf_token",csrfToken)
             .add("csrf",csrfToken);
           request.sendForm(formBody)
-            .onFailure(err->response.fail(err)).onSuccess(httpResponse->{
-            JsonObject resJson = httpResponse.bodyAsJsonObject();
-            if(resJson.getInteger("code")==0){
-              response.complete();
-            }else{
-              response.fail(new MessageDealException(resJson.toString()));
-            }
+            .onFailure(err->response.fail(err))
+            .onSuccess(httpResponse->{
+              CookiesManager.updateCookiesFormHttpBody(httpResponse);
+              JsonObject resJson = httpResponse.bodyAsJsonObject();
+              if(resJson.getInteger("code")==0){
+                response.complete();
+              }else{
+                response.fail(new MessageDealException("UpdateAlreadyReadHandler " + resJson.toString()));
+              }
           });
       });
     });

@@ -3,9 +3,7 @@ package per.hynemankan.vertx.bilibot.handlers.info;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
-import per.hynemankan.vertx.bilibot.api.GetBaseInfo;
 import per.hynemankan.vertx.bilibot.expection.UnhealthyException;
-import per.hynemankan.vertx.bilibot.expection.UnloginException;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
 import per.hynemankan.vertx.bilibot.utils.CodeMapping;
 
