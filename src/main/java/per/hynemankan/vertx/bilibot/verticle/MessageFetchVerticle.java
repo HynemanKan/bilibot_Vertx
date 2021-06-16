@@ -36,7 +36,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   public void start(Promise<Void> startPromise) {
     WebClientOptions options = new WebClientOptions()
       .setMaxPoolSize(100)
-//                .setConnectTimeout(3000)
+      .setConnectTimeout(3000)
       .setIdleTimeout(10)
       .setMaxWaitQueueSize(50);
     client = WebClient.create(vertx, options);
@@ -315,8 +315,8 @@ public class MessageFetchVerticle extends AbstractVerticle {
       }).onSuccess(data->{
         Integer count = data.getInteger("count");
         log.info(String.format("fetch new Session:%d at %d", count,lastFetchTimestamp));
-        this.lastFetchTimestamp = newFetchTimeStamp;
         if(count>0){
+          this.lastFetchTimestamp = data.getJsonArray("session_list").getJsonObject(0).getLong("session_ts");
           data.getJsonArray("session_list").forEach(this::dealMessageSession);
         }
         this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD,this::checkUnreadMessage);

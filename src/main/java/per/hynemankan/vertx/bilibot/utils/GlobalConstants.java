@@ -26,7 +26,7 @@ public class GlobalConstants {
   public static final String BILI_MESSAGE_GET_API="https://api.vc.bilibili.com/session_svr/v1/session_svr/new_sessions";
   public static final String BILI_MESSAGE_UPDATE_ACK="https://api.vc.bilibili.com/session_svr/v1/session_svr/update_ack";
   //message fetch
-  public static final Integer MESSAGE_FETCH_PERIOD=1000;
+  public static final Integer MESSAGE_FETCH_PERIOD=2500;
   //plugin
   public static final String RD_SESSION_KEY ="BILI_SESS_%d";
   public static final String PLUGIN_STATE = "pluginState";
