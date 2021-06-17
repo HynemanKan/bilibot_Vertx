@@ -1,5 +1,7 @@
 package per.hynemankan.vertx.bilibot.utils;
 
+import java.security.PublicKey;
+
 public class GlobalConstants {
   protected GlobalConstants() {
   }
@@ -15,7 +17,8 @@ public class GlobalConstants {
   public static final Integer RD_LOGIN_COOKIES_TIMEOUT=3600;//EX
   public static final String COOKIES_LOCK = "BILI_COOKIES_LOCK";
   //web client
-  public static final Integer BILI_PORT =80;
+  public static final Integer BILI_PORT =443;
+  public static final Integer REQUEST_TIMEOUT=2000;
   public static final String REQUEST_HEADER =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36 Edg/90.0.818.66";
   //bilibili api url
@@ -28,6 +31,7 @@ public class GlobalConstants {
   public static final String BILI_MESSAGE_SEND_API = "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg";
   //message fetch
   public static final Integer MESSAGE_FETCH_PERIOD=2500;
+  public static final Integer MESSAGE_SEND_PERIOD=1000;
   //plugin
   public static final String RD_SESSION_KEY ="BILI_SESS_%d";
   public static final String PLUGIN_STATE = "pluginState";
@@ -40,4 +44,8 @@ public class GlobalConstants {
   public static final String REDIRECT_FROM="redirectFrom";
   public static final String REDIRECT_TARGET="redirectTarget";
   public static final Integer RD_SESSION_TIMEOUT = 300;//EX
+  public static final String MESSAGE_TYPE = "messageType";
+  public static final String SENDER = "sender";
+  public static final String RECEIVER = "receiver";
+  public static final Integer MAX_TASK_NUM = 20;
 }

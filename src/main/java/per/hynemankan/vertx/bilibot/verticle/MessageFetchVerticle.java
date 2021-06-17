@@ -16,6 +16,8 @@ import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
 import per.hynemankan.vertx.bilibot.expection.StopPeriodicException;
 import per.hynemankan.vertx.bilibot.expection.TryDoubleStartPeriodicException;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageGetter;
+import per.hynemankan.vertx.bilibot.handlers.message.MessageSender;
+import per.hynemankan.vertx.bilibot.handlers.message.MessageSenderContorl;
 import per.hynemankan.vertx.bilibot.handlers.message.UpdateAlreadyReadHandler;
 import per.hynemankan.vertx.bilibot.plugin.helloWorld.HelloWorld;
 import per.hynemankan.vertx.bilibot.plugin.rediectTest.RediectTest;
@@ -31,7 +33,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   private WebClient client;
   private Long lastFetchTimestamp;
   private HashMap<String,String> pluginMap=new HashMap<>();
-
+  private MessageSenderContorl messageSenderContorl;
   @Override
   public void start(Promise<Void> startPromise) {
     WebClientOptions options = new WebClientOptions()
@@ -44,19 +46,20 @@ public class MessageFetchVerticle extends AbstractVerticle {
     vertx.eventBus().<String>consumer(EventBusChannels.END_MESSAGE_FETCH.name()).handler(this::endMessageFetch);
     log.info("Init message fetch success!");
     lastFetchTimestamp = System.currentTimeMillis()*1000;
+    this.messageSenderContorl = new MessageSenderContorl(vertx,client);
     pluginRegister();
     startPromise.complete();
   }
   private void pluginRegister(){
-    HelloWorld helloWorld = new HelloWorld(vertx,client);
-    RediectTest rediectTest = new RediectTest(vertx,client);
+    HelloWorld helloWorld = new HelloWorld(vertx,client,messageSenderContorl);
+    RediectTest rediectTest = new RediectTest(vertx,client,messageSenderContorl);
     pluginMap.put(HelloWorld.TRIGGER,HelloWorld.EVENT_BUS_CHANNEL);
     pluginMap.put(RediectTest.TRIGGER,RediectTest.EVENT_BUS_CHANNEL);
   }
 
   private void startMessageFetch(Message<String> message){
     if(!messageFetchStatus){
-
+      messageSenderContorl.startTimer();
       this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD,this::checkUnreadMessage);
       message.reply(true);
     }else{

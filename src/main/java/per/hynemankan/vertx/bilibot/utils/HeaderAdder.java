@@ -9,6 +9,8 @@ import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 public class HeaderAdder {
   public static void headerAdd(HttpRequest<Buffer> httpRequest){
     httpRequest.headers().set("user-agent",GlobalConstants.REQUEST_HEADER);
+    httpRequest.timeout(GlobalConstants.REQUEST_TIMEOUT);
+    httpRequest.ssl(true);
     httpRequest.expect(ResponsePredicate.status(200));
   }
 }
