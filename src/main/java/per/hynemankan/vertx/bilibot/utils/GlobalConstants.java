@@ -1,6 +1,5 @@
 package per.hynemankan.vertx.bilibot.utils;
 
-import java.security.PublicKey;
 
 public class GlobalConstants {
   protected GlobalConstants() {
