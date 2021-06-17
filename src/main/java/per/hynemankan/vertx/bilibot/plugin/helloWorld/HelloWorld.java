@@ -5,6 +5,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import lombok.extern.slf4j.Slf4j;
+import per.hynemankan.vertx.bilibot.handlers.message.MessageSender;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.PluginStatus;
 
@@ -12,7 +13,7 @@ import per.hynemankan.vertx.bilibot.utils.PluginStatus;
 public class HelloWorld {
   private Vertx vertx;
   private WebClient client;
-  public static final String TRIGGER="normal test";
+  public static final String TRIGGER="test";
   public static final String EVENT_BUS_CHANNEL="PLUGIN_HELLO_WORLD";
 
   public String getEventBusChannel() {
@@ -36,9 +37,13 @@ public class HelloWorld {
 
   private void handler(Message<JsonObject> message){
     JsonObject messageBody = message.body().getJsonObject(GlobalConstants.MESSAGE_BODY);
+    Integer selfId = messageBody.getInteger("receiver_id");
+    Integer targetId = messageBody.getInteger("sender_uid");
     JsonObject variate = message.body().getJsonObject(GlobalConstants.VARIATE);
     JsonObject shareVariate = message.body().getJsonObject(GlobalConstants.SHARE_VARIATE);
-    log.info("hello world");
+    MessageSender.sendTextMessage(client,"hello world",selfId,targetId)
+      .onFailure(err->log.warn(err.getMessage()))
+      .onSuccess(res->log.info("Send message success"));
     JsonObject response = new JsonObject();
     response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
     response.put(GlobalConstants.VARIATE,variate);

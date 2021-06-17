@@ -12,7 +12,7 @@ import per.hynemankan.vertx.bilibot.utils.PluginStatus;
 public class RediectTest {
   private Vertx vertx;
   private WebClient client;
-  public static final String TRIGGER="redirect test";
+  public static final String TRIGGER="redirect";
   public static final String EVENT_BUS_CHANNEL="PLUGIN_REDIECT_TEST";
 
   public String getEventBusChannel() {

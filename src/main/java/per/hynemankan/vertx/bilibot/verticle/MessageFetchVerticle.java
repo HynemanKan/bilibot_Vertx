@@ -164,7 +164,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
         .onFailure(err->log.warn(err.getMessage()))
         .onSuccess(response->{
           JsonObject pluginResponse = (JsonObject) response.body();
-          afterPluginActiveRoute(routeStack,variates,pluginResponse,matchPluginAddress,redisKey);
+          afterPluginActiveRoute(routeStack,variates,pluginResponse,message,matchPluginAddress,redisKey);
         });
     }else{
       String pluginAddress = routeStack.getString(routeStack.size()-1);
@@ -175,7 +175,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
         .onFailure(err->log.warn(err.getMessage()))
         .onSuccess(response->{
           JsonObject pluginResponse = (JsonObject) response.body();
-          afterPluginActiveRoute(routeStack,variates,pluginResponse,pluginAddress,redisKey);
+          afterPluginActiveRoute(routeStack,variates,pluginResponse,message,pluginAddress,redisKey);
         });
     }
   }
@@ -188,14 +188,14 @@ public class MessageFetchVerticle extends AbstractVerticle {
    * @param matchPluginAddress
    * @param redisKey
    */
-  private void afterPluginActiveRoute(JsonArray routeStack,JsonObject variates,JsonObject pluginResponse,String matchPluginAddress,String redisKey){
+  private void afterPluginActiveRoute(JsonArray routeStack,JsonObject variates,JsonObject pluginResponse,JsonObject message,String matchPluginAddress,String redisKey){
     variates.put(matchPluginAddress,pluginResponse.getJsonObject(GlobalConstants.VARIATE));
     variates.put(GlobalConstants.SHARE_VARIATE,pluginResponse.getJsonObject(GlobalConstants.SHARE_VARIATE));
     switch(PluginStatus.valueOf(pluginResponse.getString(GlobalConstants.PLUGIN_STATE))){
       case MESSAGE_LOOP_FINISH:
         if(routeStack.size()>1){
           String finishedAddress = messageStackPop(routeStack);
-          JsonObject JumpBackBody = new JsonObject()
+          JsonObject JumpBackBody = message.copy()
             .put(GlobalConstants.JUMP_BACK,finishedAddress);
           log.info(String.format("Session %s jump back %s", redisKey,routeStack.getString(routeStack.size()-1)));
           messageRoute(routeStack,variates,JumpBackBody,redisKey);
@@ -213,7 +213,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
       case MESSAGE_LOOP_REDIRECT:
         String redirectAddress = pluginResponse.getString(GlobalConstants.REDIRECT_TARGET);
         routeStack.add(redirectAddress);
-        JsonObject redirectBody = new JsonObject()
+        JsonObject redirectBody = message.copy()
           .put(GlobalConstants.REDIRECT_FROM,routeStack.getString(routeStack.size()-2));
         log.info(String.format("Session %s redirect to %s", redisKey,redirectAddress));
         messageRoute(routeStack,variates,redirectBody,redisKey);
