@@ -1,5 +1,6 @@
 package per.hynemankan.vertx.bilibot.plugin.rediectTest;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -23,18 +24,20 @@ public class RedirectTest extends PluginBaseClass {
     init(EVENT_BUS_CHANNEL);
   }
   @Override
-  public JsonObject entry(JsonObject messageBody,JsonObject variate,JsonObject shareVariate,Integer selfId,Integer targetId){
-    JsonObject response = new JsonObject();
-    if(messageBody.containsKey(GlobalConstants.JUMP_BACK)){
-      messageSenderContorl.sendTextMessage("Jump back",selfId,targetId);
-      response.put(GlobalConstants.PLUGIN_STATE,PluginStatus.MESSAGE_LOOP_FINISH.name());
-    }else{
-      messageSenderContorl.sendTextMessage("call redirect",selfId,targetId);
-      response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_REDIRECT.name());
-      response.put(GlobalConstants.REDIRECT_TARGET, HelloWorld.EVENT_BUS_CHANNEL);
-    }
-    response.put(GlobalConstants.VARIATE,variate);
-    response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
-    return response;
+  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId){
+    return Future.future(res->{
+      JsonObject response = new JsonObject();
+      if(messageBody.containsKey(GlobalConstants.JUMP_BACK)){
+        messageSenderContorl.sendTextMessage("Jump back",selfId,targetId);
+        response.put(GlobalConstants.PLUGIN_STATE,PluginStatus.MESSAGE_LOOP_FINISH.name());
+      }else{
+        messageSenderContorl.sendTextMessage("call redirect",selfId,targetId);
+        response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_REDIRECT.name());
+        response.put(GlobalConstants.REDIRECT_TARGET, HelloWorld.EVENT_BUS_CHANNEL);
+      }
+      response.put(GlobalConstants.VARIATE,variate);
+      response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
+      res.complete(response);
+    });
   }
 }

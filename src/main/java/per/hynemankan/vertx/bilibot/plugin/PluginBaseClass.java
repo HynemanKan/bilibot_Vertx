@@ -1,5 +1,6 @@
 package per.hynemankan.vertx.bilibot.plugin;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
@@ -35,14 +36,17 @@ public class PluginBaseClass {
     vertx.eventBus().<JsonObject>consumer(eventBusChannel).handler(this::handler);
   }
 
-  public JsonObject entry(JsonObject messageBody,JsonObject variate,JsonObject shareVariate,Integer selfId,Integer targetId){
-    JsonObject response = new JsonObject();
-    messageSenderContorl.sendTextMessage("demo",selfId,targetId);
-    response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
-    response.put(GlobalConstants.VARIATE,variate);
-    response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
-    return response;
+  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId){
+    return Future.future(res->{
+      JsonObject response = new JsonObject();
+      messageSenderContorl.sendTextMessage("demo",selfId,targetId);
+      response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
+      response.put(GlobalConstants.VARIATE,variate);
+      response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
+      res.complete(response);
+    });
   }
+
 
   private void handler(@NotNull Message<JsonObject> message){
     JsonObject messageBody = message.body().getJsonObject(GlobalConstants.MESSAGE_BODY);
@@ -50,8 +54,9 @@ public class PluginBaseClass {
     Integer targetId = messageBody.getInteger("sender_uid");
     JsonObject variate = message.body().getJsonObject(GlobalConstants.VARIATE);
     JsonObject shareVariate = message.body().getJsonObject(GlobalConstants.SHARE_VARIATE);
-    JsonObject response = entry(messageBody,variate,shareVariate,selfId,targetId);
-    message.reply(response);
+    entry(messageBody,variate,shareVariate,selfId,targetId)
+      .onSuccess(message::reply).onFailure(err->{
+        message.fail(-1,"deal error");
+      });
   }
-
 }

@@ -39,9 +39,7 @@ public class GetBaseInfo {
         }).onFailure(response->{
           res.fail(new WebClientException("webclient error"));
         });
-      }).onFailure(ar->{
-        res.fail(ar);
-      });
+      }).onFailure(res::fail);
     });
   }
 }
