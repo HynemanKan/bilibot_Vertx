@@ -16,16 +16,19 @@ import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
 import per.hynemankan.vertx.bilibot.expection.StopPeriodicException;
 import per.hynemankan.vertx.bilibot.expection.TryDoubleStartPeriodicException;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageGetter;
-import per.hynemankan.vertx.bilibot.handlers.message.MessageSender;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageSenderContorl;
 import per.hynemankan.vertx.bilibot.handlers.message.UpdateAlreadyReadHandler;
 import per.hynemankan.vertx.bilibot.plugin.helloWorld.HelloWorld;
-import per.hynemankan.vertx.bilibot.plugin.rediectTest.RediectTest;
+import per.hynemankan.vertx.bilibot.plugin.rediectTest.RedirectTest;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.PluginStatus;
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
 
+/**
+ * 消息抓取和处理 verticle
+ * @author hyneman
+ */
 @Slf4j
 public class MessageFetchVerticle extends AbstractVerticle {
   private boolean messageFetchStatus=false;
@@ -50,12 +53,17 @@ public class MessageFetchVerticle extends AbstractVerticle {
     pluginRegister();
     startPromise.complete();
   }
+
+  /**
+   * 插件加载，待实现动态加载卸载插件
+   */
   private void pluginRegister(){
     HelloWorld helloWorld = new HelloWorld(vertx,client,messageSenderContorl);
-    RediectTest rediectTest = new RediectTest(vertx,client,messageSenderContorl);
+    RedirectTest redirectTest = new RedirectTest(vertx,client,messageSenderContorl);
     pluginMap.put(HelloWorld.TRIGGER,HelloWorld.EVENT_BUS_CHANNEL);
-    pluginMap.put(RediectTest.TRIGGER,RediectTest.EVENT_BUS_CHANNEL);
+    pluginMap.put(RedirectTest.TRIGGER, RedirectTest.EVENT_BUS_CHANNEL);
   }
+
 
   private void startMessageFetch(Message<String> message){
     if(!messageFetchStatus){
@@ -87,7 +95,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
    * "ack_ts": 1600750734934625,
    * "session_ts": 1623586585967790,
    * "unread_count": 5,
-   * "last_msg":
+   * "last_msg":{}
    * @param session
    */
   private void dealMessageSession(Object session){
@@ -102,7 +110,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
     }
   }
   /**
-   * 相应入口
+   * 相应入口,传入message
    * "sender_uid": 12076317,
    * "receiver_type": 1,
    * "receiver_id": 7838945,
@@ -145,7 +153,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   }
 
   /**
-   * 相应处理
+   * 前相应消息路由
    * @param routeStack
    * @param variates
    * @param message
@@ -184,7 +192,7 @@ public class MessageFetchVerticle extends AbstractVerticle {
   }
 
   /**
-   * 响应后处理
+   * 响应后二次路由
    * @param routeStack
    * @param variates
    * @param pluginResponse
@@ -257,6 +265,11 @@ public class MessageFetchVerticle extends AbstractVerticle {
       .onSuccess(res->log.info(String.format("%s message active finish", redisKey)));
   }
 
+  /**
+   * 消息体正则匹配
+   * @param message
+   * @return
+   */
   private String doPluginMatch(JsonObject message){
     Iterator iterator = pluginMap.entrySet().iterator();
     String content = messageFromat(message);
@@ -271,6 +284,11 @@ public class MessageFetchVerticle extends AbstractVerticle {
     return "NaN";
   }
 
+  /**
+   * 消息体统一string化
+   * @param message
+   * @return
+   */
   private String messageFromat(JsonObject message){
     JsonObject messageBody = new JsonObject(message.getString("content"));
     switch (message.getInteger("msg_type")){
@@ -299,13 +317,18 @@ public class MessageFetchVerticle extends AbstractVerticle {
    */
   private void dealMessage(JsonObject message){
     log.info(message.getString("content"));
-    doMessageRoute(message);
+    UpdateAlreadyReadHandler.doUpdate(client,message.getInteger("sender_uid"),message.getInteger("msg_seqno"))
+      .onFailure(err->{
+        log.warn(err.getMessage(),err);
+        doMessageRoute(message);
+      })
+      .onSuccess(res->doMessageRoute(message));
   }
 
 
 
   /**
-   *
+   *定时抓取消息
    * @param id timerid useless
    */
   private void checkUnreadMessage(Long id){

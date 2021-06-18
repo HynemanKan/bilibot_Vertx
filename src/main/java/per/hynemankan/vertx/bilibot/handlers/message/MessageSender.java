@@ -15,6 +15,11 @@ import per.hynemankan.vertx.bilibot.utils.HeaderAdder;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+
+/**
+ * ！！！请勿直接使用该方法！！！
+ * @author hyneman
+ */
 public class MessageSender {
   private static String lastDeviceId = "BD726AF0-045C-4C05-96AF-EE997910C058";
   private static final String DEVICE_ID_MODEL = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";

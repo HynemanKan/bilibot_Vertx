@@ -16,8 +16,9 @@ public class GlobalConstants {
   public static final Integer RD_LOGIN_COOKIES_TIMEOUT=3600;//EX
   public static final String COOKIES_LOCK = "BILI_COOKIES_LOCK";
   //web client
-  public static final Integer BILI_PORT =443;
-  public static final Integer REQUEST_TIMEOUT=2000;
+  public static final Integer BILI_PORT =80;
+  public static final boolean USE_SSL = false;
+  public static final Integer REQUEST_TIMEOUT=5000;
   public static final String REQUEST_HEADER =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36 Edg/90.0.818.66";
   //bilibili api url

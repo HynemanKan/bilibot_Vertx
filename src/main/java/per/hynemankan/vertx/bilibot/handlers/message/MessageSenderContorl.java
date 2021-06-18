@@ -11,6 +11,11 @@ import per.hynemankan.vertx.bilibot.utils.MessageType;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Stack;
+
+/**
+ * 消息发送队列
+ * @author hyneman
+ */
 @Slf4j
 public class MessageSenderContorl {
   private Queue<JsonObject> tasks;
