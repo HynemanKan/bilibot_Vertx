@@ -8,10 +8,10 @@ public enum CodeMapping {
    * json header
    */
 
-  SUCCESS("0","SUCCESS"),
-  TRY_DOUBLE_LOGIN("1","Login already"),
-  UNKNOWN_ERROR("-1","Unknown error"),
-  REQUIRE_LOGIN("2","Require login");
+  SUCCESS("0", "SUCCESS"),
+  TRY_DOUBLE_LOGIN("1", "Login already"),
+  UNKNOWN_ERROR("-1", "Unknown error"),
+  REQUIRE_LOGIN("2", "Require login");
   /**
    * 返回码
    */
@@ -21,7 +21,7 @@ public enum CodeMapping {
    */
   private final String msg;
 
-  CodeMapping(String code,String msg){
+  CodeMapping(String code, String msg) {
     this.code = code;
     this.msg = msg;
   }
@@ -31,14 +31,17 @@ public enum CodeMapping {
       .put("code", this.code)
       .put("message", this.msg);
   }
-  public static JsonObject successResponse(JsonObject data){
-    return CodeMapping.SUCCESS.toJson().put("data",data);
+
+  public static JsonObject successResponse(JsonObject data) {
+    return CodeMapping.SUCCESS.toJson().put("data", data);
   }
 
   public String getMsg() {
     return msg;
   }
 
-  public String getCode() { return code; }
+  public String getCode() {
+    return code;
+  }
 
 }

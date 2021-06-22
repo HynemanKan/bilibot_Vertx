@@ -10,7 +10,7 @@ import per.hynemankan.vertx.bilibot.utils.CodeMapping;
 public class BaseInfoGetter implements Handler<RoutingContext> {
   private final WebClient webClient;
 
-  public BaseInfoGetter(WebClient webClient){
+  public BaseInfoGetter(WebClient webClient) {
     this.webClient = webClient;
   }
 
@@ -20,9 +20,9 @@ public class BaseInfoGetter implements Handler<RoutingContext> {
       routingContext.fail(new UnhealthyException());
       return;
     }
-    GetBaseInfo.getBaseInfo(webClient).onSuccess(res->{
+    GetBaseInfo.getBaseInfo(webClient).onSuccess(res -> {
       routingContext.response().end(CodeMapping.successResponse(res).toString());
-    }).onFailure(res->{
+    }).onFailure(res -> {
       routingContext.fail(res);
     });
   }

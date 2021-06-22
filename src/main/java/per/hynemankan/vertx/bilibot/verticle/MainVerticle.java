@@ -12,13 +12,14 @@ import per.hynemankan.vertx.bilibot.handlers.common.PingHandler;
 import per.hynemankan.vertx.bilibot.handlers.info.BaseInfoGetter;
 import per.hynemankan.vertx.bilibot.handlers.login.LoginQRCodeGetter;
 import per.hynemankan.vertx.bilibot.handlers.login.LoginStatusGetter;
+import per.hynemankan.vertx.bilibot.handlers.support.ImageUpload;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 
 @Slf4j
 public class MainVerticle extends AbstractVerticle {
 
   @Override
-  public void start(Promise<Void> startPromise){
+  public void start(Promise<Void> startPromise) {
     WebClientOptions options = new WebClientOptions()
       .setMaxPoolSize(100)
 //                .setConnectTimeout(3000)
@@ -29,8 +30,8 @@ public class MainVerticle extends AbstractVerticle {
     PingHandler pingHandler = new PingHandler();
     FailureHandler failureHandler = new FailureHandler();
 
-    LoginQRCodeGetter loginQRCodeGetter = new LoginQRCodeGetter(vertx,client);
-    LoginStatusGetter loginStatusGetter = new LoginStatusGetter(vertx,client);
+    LoginQRCodeGetter loginQRCodeGetter = new LoginQRCodeGetter(vertx, client);
+    LoginStatusGetter loginStatusGetter = new LoginStatusGetter(vertx, client);
 
     BaseInfoGetter baseInfoGetter = new BaseInfoGetter(client);
 
@@ -45,9 +46,13 @@ public class MainVerticle extends AbstractVerticle {
     //info
     router.get("/API/info/baseInfo").handler(baseInfoGetter).failureHandler(failureHandler);
     //page
-    router.get("/").handler(routingContext->
+    router.get("/").handler(routingContext ->
       routingContext.response().sendFile("pages/login.html")
     ).failureHandler(failureHandler);
+    router.get("/test").handler(routingContext -> {
+      ImageUpload.puloadImageByPath(client, "images/", "test.jpg")
+        .onFailure(routingContext::fail).onSuccess(res -> routingContext.response().end(res.toString()));
+    });
     // 启动Http server
     vertx.createHttpServer().requestHandler(router).listen(GlobalConstants.HTTP_PORT, r -> {
       if (r.succeeded()) {

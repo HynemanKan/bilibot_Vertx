@@ -64,6 +64,7 @@ public class MysqlUtils extends AbstractVerticle {
       }
     });
   }
+
   /**
    * get client
    */

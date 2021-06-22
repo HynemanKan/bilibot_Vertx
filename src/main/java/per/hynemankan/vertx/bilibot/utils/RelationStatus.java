@@ -14,12 +14,12 @@ public enum RelationStatus {
 
   private final Integer biliCode;
 
-  public Integer getBiliCode(){
+  public Integer getBiliCode() {
     return biliCode;
   }
 
   RelationStatus(Integer biliCode) {
-    this.biliCode=biliCode;
+    this.biliCode = biliCode;
   }
 
   public static RelationStatus getByCode(Integer biliCode) {

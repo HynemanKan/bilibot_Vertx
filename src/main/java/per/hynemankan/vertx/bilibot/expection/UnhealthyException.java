@@ -2,6 +2,7 @@ package per.hynemankan.vertx.bilibot.expection;
 
 /**
  * unhealth exception
+ *
  * @author hyneman
  */
 public class UnhealthyException extends RuntimeException {

@@ -2,7 +2,9 @@ package per.hynemankan.vertx.bilibot.verticle;
 
 import java.util.*;
 import java.util.regex.Pattern;
+
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -11,10 +13,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.redis.client.RedisAPI;
 import lombok.extern.slf4j.Slf4j;
-import per.hynemankan.vertx.bilibot.expection.MessageDealException;
-import per.hynemankan.vertx.bilibot.expection.RedisAPIException;
-import per.hynemankan.vertx.bilibot.expection.StopPeriodicException;
-import per.hynemankan.vertx.bilibot.expection.TryDoubleStartPeriodicException;
+import per.hynemankan.vertx.bilibot.expection.*;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageGetter;
 import per.hynemankan.vertx.bilibot.handlers.message.MessageSenderContorl;
 import per.hynemankan.vertx.bilibot.handlers.message.UpdateAlreadyReadHandler;
@@ -23,20 +22,23 @@ import per.hynemankan.vertx.bilibot.plugin.rediectTest.RedirectTest;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.PluginStatus;
+
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
 
 /**
  * 消息抓取和处理 verticle
+ *
  * @author hyneman
  */
 @Slf4j
 public class MessageFetchVerticle extends AbstractVerticle {
-  private boolean messageFetchStatus=false;
+  private boolean messageFetchStatus = false;
   private Long timerId;
   private WebClient client;
   private Long lastFetchTimestamp;
-  private HashMap<String,String> pluginMap=new HashMap<>();
+  private HashMap<String, String> pluginMap = new HashMap<>();
   private MessageSenderContorl messageSenderContorl;
+
   @Override
   public void start(Promise<Void> startPromise) {
     WebClientOptions options = new WebClientOptions()
@@ -47,9 +49,10 @@ public class MessageFetchVerticle extends AbstractVerticle {
     client = WebClient.create(vertx, options);
     vertx.eventBus().<String>consumer(EventBusChannels.START_MESSAGE_FETCH.name()).handler(this::startMessageFetch);
     vertx.eventBus().<String>consumer(EventBusChannels.END_MESSAGE_FETCH.name()).handler(this::endMessageFetch);
+    vertx.eventBus().<JsonObject>consumer(EventBusChannels.RAISE_SESSION.name()).handler(this::raiseSession);
     log.info("Init message fetch success!");
-    lastFetchTimestamp = System.currentTimeMillis()*1000;
-    this.messageSenderContorl = new MessageSenderContorl(vertx,client);
+    lastFetchTimestamp = System.currentTimeMillis() * 1000;
+    this.messageSenderContorl = new MessageSenderContorl(vertx, client);
     pluginRegister();
     startPromise.complete();
   }
@@ -57,31 +60,68 @@ public class MessageFetchVerticle extends AbstractVerticle {
   /**
    * 插件加载，待实现动态加载卸载插件
    */
-  private void pluginRegister(){
-    HelloWorld helloWorld = new HelloWorld(vertx,client,messageSenderContorl);
-    RedirectTest redirectTest = new RedirectTest(vertx,client,messageSenderContorl);
-    pluginMap.put(HelloWorld.TRIGGER,HelloWorld.EVENT_BUS_CHANNEL);
+  private void pluginRegister() {
+    HelloWorld helloWorld = new HelloWorld(vertx, client, messageSenderContorl);
+    RedirectTest redirectTest = new RedirectTest(vertx, client, messageSenderContorl);
+    pluginMap.put(HelloWorld.TRIGGER, HelloWorld.EVENT_BUS_CHANNEL);
     pluginMap.put(RedirectTest.TRIGGER, RedirectTest.EVENT_BUS_CHANNEL);
   }
 
 
-  private void startMessageFetch(Message<String> message){
-    if(!messageFetchStatus){
+  private void startMessageFetch(Message<String> message) {
+    if (!messageFetchStatus) {
       messageSenderContorl.startTimer();
-      this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD,this::checkUnreadMessage);
+      this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD, this::checkUnreadMessage);
       message.reply(true);
-    }else{
+    } else {
       throw new TryDoubleStartPeriodicException();
     }
   }
 
-  private void endMessageFetch(Message<String> message){
-    if(messageFetchStatus){
+  private void endMessageFetch(Message<String> message) {
+    if (messageFetchStatus) {
       vertx.cancelTimer(this.timerId);
       message.reply(true);
-    }else{
+    } else {
       throw new StopPeriodicException();
     }
+  }
+
+  /**
+   * 主动发起会话
+   * message:
+   *  targetId
+   *  selfId
+   *  pluginAddress
+   *  variates
+   * @param message
+   */
+  private Future<Void> raiseSession(Message<JsonObject> message){
+    return Future.future(response->{
+      Integer talkerId = message.body().getInteger(GlobalConstants.TARGET_ID);
+      String redisKey = String.format(GlobalConstants.RD_SESSION_KEY, talkerId);
+      JsonObject messageBody = new JsonObject()
+        .put("sender_uid",message.body().getInteger(GlobalConstants.TARGET_ID))
+        .put("receiver_id",message.body().getInteger(GlobalConstants.SELF_ID))
+        .put(GlobalConstants.RAISE_BY_OUT,"");
+      RedisAPI.api(getClient()).exists(Collections.singletonList(redisKey))
+        .onFailure(err -> {
+          log.warn(err.getMessage());
+          throw new RedisAPIException();
+        }).onSuccess(redisRes -> {
+        Boolean isExists = redisRes.toBoolean();
+        if (!isExists) {
+          JsonArray routeStack = new JsonArray().add(message.body().getString(GlobalConstants.PLUGIN_ADDRESS));
+          JsonObject variates = new JsonObject()
+            .put(message.body().getString(GlobalConstants.PLUGIN_ADDRESS),
+              message.body().getJsonObject(GlobalConstants.VARIATE));
+          response.complete();
+          messageRoute(routeStack, variates, messageBody, redisKey);
+        } else {
+          response.fail(new SessionBusyException());
+        }
+      });
+    });
   }
 
   /**
@@ -96,19 +136,21 @@ public class MessageFetchVerticle extends AbstractVerticle {
    * "session_ts": 1623586585967790,
    * "unread_count": 5,
    * "last_msg":{}
+   *
    * @param session
    */
-  private void dealMessageSession(Object session){
-    if(session instanceof JsonObject){
+  private void dealMessageSession(Object session) {
+    if (session instanceof JsonObject) {
       Integer talkerId = ((JsonObject) session).getInteger("talker_id");
       log.info(String.format("deal message from %d", talkerId));
       JsonObject message = ((JsonObject) session).getJsonObject("last_msg");
       dealMessage(message);
-    }else{
+    } else {
       log.warn(session.toString());
       throw new MessageDealException("unexcept type");
     }
   }
+
   /**
    * 相应入口,传入message
    * "sender_uid": 12076317,
@@ -122,115 +164,118 @@ public class MessageFetchVerticle extends AbstractVerticle {
    * "msg_status": 0,
    * "notify_code": "3_13",
    * "new_face_version": 1
+   *
    * @param message
    */
-  private void doMessageRoute(JsonObject message){
+  private void doMessageRoute(JsonObject message) {
     Integer talkerId = message.getInteger("sender_uid");
-    String redisKey = String.format(GlobalConstants.RD_SESSION_KEY,talkerId);
+    String redisKey = String.format(GlobalConstants.RD_SESSION_KEY, talkerId);
     RedisAPI.api(getClient()).exists(Collections.singletonList(redisKey))
-      .onFailure(err->{
+      .onFailure(err -> {
         log.warn(err.getMessage());
         throw new RedisAPIException();
-      }).onSuccess(redisRes->{
-        Boolean isExists = redisRes.toBoolean();
-        if(!isExists){
-          JsonArray routeStack = new JsonArray();
-          JsonObject variates = new JsonObject();
-          messageRoute(routeStack,variates,message,redisKey);
-        }else{
-          RedisAPI.api(getClient()).get(redisKey)
-            .onFailure(err->{
-              log.warn(err.getMessage());
-              throw new RedisAPIException();
-            }).onSuccess(getRes->{
-              JsonObject collection = new JsonObject(getRes.toString());
-              JsonArray routeStack = collection.getJsonArray(GlobalConstants.ROUTE_STACK);
-              JsonObject variates = collection.getJsonObject(GlobalConstants.VARTATES);
-              messageRoute(routeStack,variates,message,redisKey);
-          });
-        }
+      }).onSuccess(redisRes -> {
+      Boolean isExists = redisRes.toBoolean();
+      if (!isExists) {
+        JsonArray routeStack = new JsonArray();
+        JsonObject variates = new JsonObject();
+        messageRoute(routeStack, variates, message, redisKey);
+      } else {
+        RedisAPI.api(getClient()).get(redisKey)
+          .onFailure(err -> {
+            log.warn(err.getMessage());
+            throw new RedisAPIException();
+          }).onSuccess(getRes -> {
+          JsonObject collection = new JsonObject(getRes.toString());
+          JsonArray routeStack = collection.getJsonArray(GlobalConstants.ROUTE_STACK);
+          JsonObject variates = collection.getJsonObject(GlobalConstants.VARTATES);
+          messageRoute(routeStack, variates, message, redisKey);
+        });
+      }
     });
   }
 
   /**
    * 前相应消息路由
+   *
    * @param routeStack
    * @param variates
    * @param message
    * @param redisKey
    */
-  private void messageRoute(JsonArray routeStack,JsonObject variates,JsonObject message,String redisKey){
+  private void messageRoute(JsonArray routeStack, JsonObject variates, JsonObject message, String redisKey) {
     JsonObject packagedData = new JsonObject();
-    if (routeStack.size()==0){
-      packagedData.put(GlobalConstants.MESSAGE_BODY,message)
-        .put(GlobalConstants.VARIATE,new JsonObject())
-        .put(GlobalConstants.SHARE_VARIATE,new JsonObject());
+    if (routeStack.size() == 0) {
+      packagedData.put(GlobalConstants.MESSAGE_BODY, message)
+        .put(GlobalConstants.VARIATE, new JsonObject())
+        .put(GlobalConstants.SHARE_VARIATE, new JsonObject());
       String matchPluginAddress = doPluginMatch(message);
-      if("NaN".equals(matchPluginAddress)){
+      if ("NaN".equals(matchPluginAddress)) {
         log.info("No plugin activate");
         return;
       }
       routeStack.add(matchPluginAddress);
-      vertx.eventBus().request(matchPluginAddress,packagedData)
-        .onFailure(err->log.warn(err.getMessage()))
-        .onSuccess(response->{
+      vertx.eventBus().request(matchPluginAddress, packagedData)
+        .onFailure(err -> log.warn(err.getMessage()))
+        .onSuccess(response -> {
           JsonObject pluginResponse = (JsonObject) response.body();
-          afterPluginActiveRoute(routeStack,variates,pluginResponse,message,matchPluginAddress,redisKey);
+          afterPluginActiveRoute(routeStack, variates, pluginResponse, message, matchPluginAddress, redisKey);
         });
-    }else{
-      String pluginAddress = routeStack.getString(routeStack.size()-1);
-      packagedData.put(GlobalConstants.MESSAGE_BODY,message)
-        .put(GlobalConstants.VARIATE,variates.getJsonObject(pluginAddress))
-        .put(GlobalConstants.SHARE_VARIATE,variates.getJsonObject(GlobalConstants.SHARE_VARIATE));
-      vertx.eventBus().request(pluginAddress,packagedData)
-        .onFailure(err->log.warn(err.getMessage()))
-        .onSuccess(response->{
+    } else {
+      String pluginAddress = routeStack.getString(routeStack.size() - 1);
+      packagedData.put(GlobalConstants.MESSAGE_BODY, message)
+        .put(GlobalConstants.VARIATE, variates.getJsonObject(pluginAddress))
+        .put(GlobalConstants.SHARE_VARIATE, variates.getJsonObject(GlobalConstants.SHARE_VARIATE));
+      vertx.eventBus().request(pluginAddress, packagedData)
+        .onFailure(err -> log.warn(err.getMessage()))
+        .onSuccess(response -> {
           JsonObject pluginResponse = (JsonObject) response.body();
-          afterPluginActiveRoute(routeStack,variates,pluginResponse,message,pluginAddress,redisKey);
+          afterPluginActiveRoute(routeStack, variates, pluginResponse, message, pluginAddress, redisKey);
         });
     }
   }
 
   /**
    * 响应后二次路由
+   *
    * @param routeStack
    * @param variates
    * @param pluginResponse
    * @param matchPluginAddress
    * @param redisKey
    */
-  private void afterPluginActiveRoute(JsonArray routeStack,JsonObject variates,JsonObject pluginResponse,JsonObject message,String matchPluginAddress,String redisKey){
-    variates.put(matchPluginAddress,pluginResponse.getJsonObject(GlobalConstants.VARIATE));
-    variates.put(GlobalConstants.SHARE_VARIATE,pluginResponse.getJsonObject(GlobalConstants.SHARE_VARIATE));
-    switch(PluginStatus.valueOf(pluginResponse.getString(GlobalConstants.PLUGIN_STATE))){
+  private void afterPluginActiveRoute(JsonArray routeStack, JsonObject variates, JsonObject pluginResponse, JsonObject message, String matchPluginAddress, String redisKey) {
+    variates.put(matchPluginAddress, pluginResponse.getJsonObject(GlobalConstants.VARIATE));
+    variates.put(GlobalConstants.SHARE_VARIATE, pluginResponse.getJsonObject(GlobalConstants.SHARE_VARIATE));
+    switch (PluginStatus.valueOf(pluginResponse.getString(GlobalConstants.PLUGIN_STATE))) {
       case MESSAGE_LOOP_FINISH:
-        if(routeStack.size()>1){
+        if (routeStack.size() > 1) {
           String finishedAddress = messageStackPop(routeStack);
           JsonObject JumpBackBody = message.copy()
-            .put(GlobalConstants.JUMP_BACK,finishedAddress);
-          log.info(String.format("Session %s jump back %s", redisKey,routeStack.getString(routeStack.size()-1)));
-          messageRoute(routeStack,variates,JumpBackBody,redisKey);
-        }else{
+            .put(GlobalConstants.JUMP_BACK, finishedAddress);
+          log.info(String.format("Session %s jump back %s", redisKey, routeStack.getString(routeStack.size() - 1)));
+          messageRoute(routeStack, variates, JumpBackBody, redisKey);
+        } else {
           log.info(String.format("Session %s finish", redisKey));
           delSession(redisKey);
         }
         break;
       case MESSAGE_LOOP_WAIT:
         JsonObject packagedData = new JsonObject()
-          .put(GlobalConstants.ROUTE_STACK,routeStack)
-          .put(GlobalConstants.VARTATES,variates);
-        saveSession(redisKey,packagedData);
+          .put(GlobalConstants.ROUTE_STACK, routeStack)
+          .put(GlobalConstants.VARTATES, variates);
+        saveSession(redisKey, packagedData);
         break;
       case MESSAGE_LOOP_REDIRECT:
         String redirectAddress = pluginResponse.getString(GlobalConstants.REDIRECT_TARGET);
         routeStack.add(redirectAddress);
         JsonObject redirectBody = message.copy()
-          .put(GlobalConstants.REDIRECT_FROM,routeStack.getString(routeStack.size()-2));
-        log.info(String.format("Session %s redirect to %s", redisKey,redirectAddress));
-        messageRoute(routeStack,variates,redirectBody,redisKey);
+          .put(GlobalConstants.REDIRECT_FROM, routeStack.getString(routeStack.size() - 2));
+        log.info(String.format("Session %s redirect to %s", redisKey, redirectAddress));
+        messageRoute(routeStack, variates, redirectBody, redisKey);
         break;
       case MESSAGE_LOOP_KILL:
-        log.warn(String.format("Session %s kill by Plugin %s",redisKey,messageStackPop(routeStack)));
+        log.warn(String.format("Session %s kill by Plugin %s", redisKey, messageStackPop(routeStack)));
         delSession(redisKey);
         break;
       default:
@@ -239,45 +284,50 @@ public class MessageFetchVerticle extends AbstractVerticle {
     }
   }
 
-  private String messageStackPop(JsonArray routeStack){
-    if(routeStack.size()==0){
+  private String messageStackPop(JsonArray routeStack) {
+    if (routeStack.size() == 0) {
       throw new ArrayIndexOutOfBoundsException();
     }
-    String need = routeStack.getString(routeStack.size()-1);
-    routeStack.remove(routeStack.size()-1);
+    String need = routeStack.getString(routeStack.size() - 1);
+    routeStack.remove(routeStack.size() - 1);
     return need;
   }
 
-  private void saveSession(String redisKey,JsonObject packagedData){
+  private void saveSession(String redisKey, JsonObject packagedData) {
     List<String> list = Arrays.asList(
       GlobalConstants.RD_LOGIN_OAUTHKEY,
       packagedData.toString(),
       GlobalConstants.TIME_S_MARK,
       String.valueOf(GlobalConstants.RD_SESSION_TIMEOUT));
     RedisAPI.api(getClient()).set(list)
-      .onFailure(err->{log.warn(err.getMessage());})
-      .onSuccess(res->log.info(String.format("%s message active save", redisKey)));
+      .onFailure(err -> {
+        log.warn(err.getMessage());
+      })
+      .onSuccess(res -> log.info(String.format("%s message active save", redisKey)));
   }
 
-  private void delSession(String redisKey){
+  private void delSession(String redisKey) {
     RedisAPI.api(getClient()).del(Collections.singletonList(redisKey))
-      .onFailure(err->{log.warn(err.getMessage());})
-      .onSuccess(res->log.info(String.format("%s message active finish", redisKey)));
+      .onFailure(err -> {
+        log.warn(err.getMessage());
+      })
+      .onSuccess(res -> log.info(String.format("%s message active finish", redisKey)));
   }
 
   /**
    * 消息体正则匹配
+   *
    * @param message
    * @return
    */
-  private String doPluginMatch(JsonObject message){
+  private String doPluginMatch(JsonObject message) {
     Iterator iterator = pluginMap.entrySet().iterator();
     String content = messageFromat(message);
     log.info(content);
-    while (iterator.hasNext()){
+    while (iterator.hasNext()) {
       Map.Entry entry = (Map.Entry) iterator.next();
-      Boolean isMatch = Pattern.matches((String) entry.getKey(),content);
-      if(isMatch){
+      Boolean isMatch = Pattern.matches((String) entry.getKey(), content);
+      if (isMatch) {
         return (String) entry.getValue();
       }
     }
@@ -286,16 +336,17 @@ public class MessageFetchVerticle extends AbstractVerticle {
 
   /**
    * 消息体统一string化
+   *
    * @param message
    * @return
    */
-  private String messageFromat(JsonObject message){
+  private String messageFromat(JsonObject message) {
     JsonObject messageBody = new JsonObject(message.getString("content"));
-    switch (message.getInteger("msg_type")){
+    switch (message.getInteger("msg_type")) {
       case 1:
         return messageBody.getString("content");
       case 2:
-        return String.format("[img][%s]",messageBody.getString("url"));
+        return String.format("[img][%s]", messageBody.getString("url"));
       default:
         return "unknown";
     }
@@ -313,39 +364,40 @@ public class MessageFetchVerticle extends AbstractVerticle {
    * "msg_status": 0,
    * "notify_code": "3_13",
    * "new_face_version": 1
+   *
    * @param message
    */
-  private void dealMessage(JsonObject message){
+  private void dealMessage(JsonObject message) {
     log.info(message.getString("content"));
-    UpdateAlreadyReadHandler.doUpdate(client,message.getInteger("sender_uid"),message.getInteger("msg_seqno"))
-      .onFailure(err->{
-        log.warn(err.getMessage(),err);
+    UpdateAlreadyReadHandler.doUpdate(client, message.getInteger("sender_uid"), message.getInteger("msg_seqno"))
+      .onFailure(err -> {
+        log.warn(err.getMessage(), err);
         doMessageRoute(message);
       })
-      .onSuccess(res->doMessageRoute(message));
+      .onSuccess(res -> doMessageRoute(message));
   }
 
 
-
   /**
-   *定时抓取消息
+   * 定时抓取消息
+   *
    * @param id timerid useless
    */
-  private void checkUnreadMessage(Long id){
+  private void checkUnreadMessage(Long id) {
     log.info("check unread message");
-    Long newFetchTimeStamp = System.currentTimeMillis()*1000;
-    MessageGetter.getMessageSession(client,lastFetchTimestamp)
-      .onFailure(err->{
+    Long newFetchTimeStamp = System.currentTimeMillis() * 1000;
+    MessageGetter.getMessageSession(client, lastFetchTimestamp)
+      .onFailure(err -> {
         log.warn(err.getMessage());
-        this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD,this::checkUnreadMessage);
-      }).onSuccess(data->{
-        Integer count = data.getInteger("count");
-        log.info(String.format("fetch new Session:%d at %d", count,lastFetchTimestamp));
-        if(count>0){
-          this.lastFetchTimestamp = data.getJsonArray("session_list").getJsonObject(0).getLong("session_ts");
-          data.getJsonArray("session_list").forEach(this::dealMessageSession);
-        }
-        this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD,this::checkUnreadMessage);
+        this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD, this::checkUnreadMessage);
+      }).onSuccess(data -> {
+      Integer count = data.getInteger("count");
+      log.info(String.format("fetch new Session:%d at %d", count, lastFetchTimestamp));
+      if (count > 0) {
+        this.lastFetchTimestamp = data.getJsonArray("session_list").getJsonObject(0).getLong("session_ts");
+        data.getJsonArray("session_list").forEach(this::dealMessageSession);
+      }
+      this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD, this::checkUnreadMessage);
     });
 
   }

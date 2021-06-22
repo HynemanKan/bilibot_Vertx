@@ -10,6 +10,7 @@ import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 
 /**
  * 并发锁管理
+ *
  * @author hyneman
  */
 @Slf4j
@@ -26,7 +27,7 @@ public class RedisLockHandler {
    * @param requestId 锁编号
    * @return future成功失败信息
    */
-  public static Future<Void> getDistributionLock(String lockName,String requestId) {
+  public static Future<Void> getDistributionLock(String lockName, String requestId) {
     JsonObject data = new JsonObject()
       .put("lock", lockName)
       .put("requestId", requestId);
@@ -47,7 +48,7 @@ public class RedisLockHandler {
    * @param requestId 锁编号
    * @return future成功失败信息
    */
-  public static Future<Void> releaseDistributionLock(String lockName,String requestId) {
+  public static Future<Void> releaseDistributionLock(String lockName, String requestId) {
     JsonObject data = new JsonObject()
       .put("lock", lockName)
       .put("requestId", requestId);

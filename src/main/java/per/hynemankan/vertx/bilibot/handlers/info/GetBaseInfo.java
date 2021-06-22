@@ -14,10 +14,11 @@ import per.hynemankan.vertx.bilibot.utils.HeaderAdder;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+
 @Slf4j
 public class GetBaseInfo {
-  public static Future<JsonObject> getBaseInfo(WebClient webClient){
-    return Future.future(res->{
+  public static Future<JsonObject> getBaseInfo(WebClient webClient) {
+    return Future.future(res -> {
       URL url;
       try {
         url = new URL(GlobalConstants.BILI_INFO_BASE_INFO_API);
@@ -27,16 +28,16 @@ public class GetBaseInfo {
       }
       HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath());
       HeaderAdder.headerAdd(request);
-      CookiesManager.headCookiesAdder(request).onSuccess(ar->{
+      CookiesManager.headCookiesAdder(request).onSuccess(ar -> {
         log.info(request.headers().toString());
-        request.send().onSuccess(response->{
-          JsonObject jsonBody=  response.bodyAsJsonObject();
-          if(jsonBody.getInteger("code")==-101){
+        request.send().onSuccess(response -> {
+          JsonObject jsonBody = response.bodyAsJsonObject();
+          if (jsonBody.getInteger("code") == -101) {
             res.fail(new UnloginException());
-          }else{
+          } else {
             res.complete(jsonBody.getJsonObject("data"));
           }
-        }).onFailure(response->{
+        }).onFailure(response -> {
           res.fail(new WebClientException("webclient error"));
         });
       }).onFailure(res::fail);

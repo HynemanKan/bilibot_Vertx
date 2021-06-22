@@ -22,16 +22,17 @@ import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.utils.GlobalConstants;
 import per.hynemankan.vertx.bilibot.utils.CodeMapping;
+
 import static per.hynemankan.vertx.bilibot.db.RedisUtils.getClient;
 import static per.hynemankan.vertx.bilibot.utils.HeaderAdder.headerAdd;
 
 @Slf4j
-public class LoginQRCodeGetter implements Handler<RoutingContext>{
+public class LoginQRCodeGetter implements Handler<RoutingContext> {
   private final WebClient webClient;
   private final Vertx vertx;
 
 
-  public LoginQRCodeGetter(Vertx vertx, WebClient webClient){
+  public LoginQRCodeGetter(Vertx vertx, WebClient webClient) {
     this.vertx = vertx;
     this.webClient = webClient;
   }
@@ -43,19 +44,19 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
       return;
     }
     RedisAPI.api(getClient()).exists(Collections.singletonList(GlobalConstants.RD_LOGIN_COOKIES))
-      .onSuccess(res->{
+      .onSuccess(res -> {
         URL url;
         Boolean isExists = res.toBoolean();
-        if(isExists){
+        if (isExists) {
           routingContext.response().end(CodeMapping.TRY_DOUBLE_LOGIN.toJson().toString());
-          vertx.eventBus().request(EventBusChannels.START_MESSAGE_FETCH.name(),"", r->{
-            if(r.succeeded()){
+          vertx.eventBus().request(EventBusChannels.START_MESSAGE_FETCH.name(), "", r -> {
+            if (r.succeeded()) {
               log.info("Message fetch verticle start success!");
-            }else{
+            } else {
               log.info(r.cause().toString());
             }
           });
-        }else{
+        } else {
           try {
             url = new URL(GlobalConstants.BILI_LOGIN_QRCODE_GET_API);
           } catch (MalformedURLException e) {
@@ -64,7 +65,7 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
           }
           HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath());
           headerAdd(request);//请求头user-agent添加
-          request.send().onSuccess(response->{
+          request.send().onSuccess(response -> {
             JsonObject body = response.body().toJsonObject();
             JsonObject resData = new JsonObject();
             String QRCodeUrl = body.getJsonObject("data").getString("url");
@@ -74,15 +75,16 @@ public class LoginQRCodeGetter implements Handler<RoutingContext>{
               oauthKey,
               GlobalConstants.TIME_S_MARK,
               String.valueOf(GlobalConstants.RD_LOGIN_OAUTHKEY_TIMEOUT));
-            RedisAPI.api(getClient()).set(list,ar->{});
-            resData.put("url",QRCodeUrl);
+            RedisAPI.api(getClient()).set(list, ar -> {
+            });
+            resData.put("url", QRCodeUrl);
             routingContext.response().end(CodeMapping.successResponse(resData).toString());
-          }).onFailure(response->{
+          }).onFailure(response -> {
             routingContext.fail(new WebClientException(response.getMessage()));
           });
         }
-      }).onFailure(res->{
-        throw new RedisAPIException();
+      }).onFailure(res -> {
+      throw new RedisAPIException();
     });
   }
 }

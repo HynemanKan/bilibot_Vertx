@@ -20,7 +20,7 @@ import java.net.URL;
 @Slf4j
 public class UnreadChecker {
   public static Future<Integer> getUnreadCount(WebClient webClient) {
-    return Future.future(response->{
+    return Future.future(response -> {
       URL url;
       try {
         url = new URL(GlobalConstants.BILI_MESSAGE_UNREAD_API);
@@ -28,22 +28,22 @@ public class UnreadChecker {
         response.fail(new WebClientException("Got illegal Url!", e));
         return;
       }
-      HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT,url.getHost(),url.getPath());
+      HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath());
       HeaderAdder.headerAdd(request);
       CookiesManager.headCookiesAdder(request)
-        .onFailure(err->response.fail(err)).onSuccess(res->{
-          request.send().onFailure(err->response.fail(err))
-            .onSuccess(httpResponse->{
-              JsonObject resData = httpResponse.bodyAsJsonObject();
-              if(!resData.getInteger("code").equals(0)){
-                log.warn(resData.toString());
-                response.fail(new WebClientException("webclinet error"));
-                return;
-              }
-              JsonObject dataBody = resData.getJsonObject("data");
-              Integer unreadCount= dataBody.getInteger("unfollow_unread")+dataBody.getInteger("follow_unread");
-              response.complete(unreadCount);
-            });
+        .onFailure(err -> response.fail(err)).onSuccess(res -> {
+        request.send().onFailure(err -> response.fail(err))
+          .onSuccess(httpResponse -> {
+            JsonObject resData = httpResponse.bodyAsJsonObject();
+            if (!resData.getInteger("code").equals(0)) {
+              log.warn(resData.toString());
+              response.fail(new WebClientException("webclinet error"));
+              return;
+            }
+            JsonObject dataBody = resData.getJsonObject("data");
+            Integer unreadCount = dataBody.getInteger("unfollow_unread") + dataBody.getInteger("follow_unread");
+            response.complete(unreadCount);
+          });
       });
     });
   }

@@ -15,8 +15,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class GetRelation {
-  public static Future<RelationStatus> getRelation(WebClient client, Integer uid){
-    return Future.future(response->{
+  public static Future<RelationStatus> getRelation(WebClient client, Integer uid) {
+    return Future.future(response -> {
       URL url;
       try {
         url = new URL(GlobalConstants.BILI_INFO_RELATION_API);
@@ -24,16 +24,16 @@ public class GetRelation {
         response.fail(new WebClientException("Got illegal Url!", e));
         return;
       }
-      HttpRequest<Buffer> request = client.get(GlobalConstants.BILI_PORT,url.getHost(),url.getPath())
-        .addQueryParam("fid",uid.toString());
+      HttpRequest<Buffer> request = client.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath())
+        .addQueryParam("fid", uid.toString());
       HeaderAdder.headerAdd(request);
       CookiesManager.headCookiesAdder(request)
-        .onFailure(response::fail).onSuccess(res->{
-         request.send().onFailure(response::fail)
-           .onSuccess(webResponse->{
-             JsonObject jsonBody=  webResponse.bodyAsJsonObject();
-             response.complete(RelationStatus.getByCode(jsonBody.getInteger("attribute")));
-           });
+        .onFailure(response::fail).onSuccess(res -> {
+        request.send().onFailure(response::fail)
+          .onSuccess(webResponse -> {
+            JsonObject jsonBody = webResponse.bodyAsJsonObject();
+            response.complete(RelationStatus.getByCode(jsonBody.getInteger("attribute")));
+          });
       });
     });
   }

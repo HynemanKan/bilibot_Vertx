@@ -17,26 +17,28 @@ import per.hynemankan.vertx.bilibot.utils.PluginStatus;
  */
 @Slf4j
 public class RedirectTest extends PluginBaseClass {
-  public static String TRIGGER="redirect";
-  public static String EVENT_BUS_CHANNEL="PLUGIN_REDIRECT_TEST";
+  public static String TRIGGER = "redirect";
+  public static String EVENT_BUS_CHANNEL = "PLUGIN_REDIRECT_TEST";
+
   public RedirectTest(Vertx vertx, WebClient client, MessageSenderContorl messageSenderContorl) {
     super(vertx, client, messageSenderContorl);
     init(EVENT_BUS_CHANNEL);
   }
+
   @Override
-  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId){
-    return Future.future(res->{
+  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId) {
+    return Future.future(res -> {
       JsonObject response = new JsonObject();
-      if(messageBody.containsKey(GlobalConstants.JUMP_BACK)){
-        messageSenderContorl.sendTextMessage("Jump back",selfId,targetId);
-        response.put(GlobalConstants.PLUGIN_STATE,PluginStatus.MESSAGE_LOOP_FINISH.name());
-      }else{
-        messageSenderContorl.sendTextMessage("call redirect",selfId,targetId);
+      if (messageBody.containsKey(GlobalConstants.JUMP_BACK)) {
+        messageSenderContorl.sendTextMessage("Jump back", selfId, targetId);
+        response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
+      } else {
+        messageSenderContorl.sendTextMessage("call redirect", selfId, targetId);
         response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_REDIRECT.name());
         response.put(GlobalConstants.REDIRECT_TARGET, HelloWorld.EVENT_BUS_CHANNEL);
       }
-      response.put(GlobalConstants.VARIATE,variate);
-      response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
+      response.put(GlobalConstants.VARIATE, variate);
+      response.put(GlobalConstants.SHARE_VARIATE, shareVariate);
       res.complete(response);
     });
   }

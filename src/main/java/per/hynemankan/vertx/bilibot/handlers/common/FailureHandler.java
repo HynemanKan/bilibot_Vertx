@@ -15,13 +15,13 @@ public class FailureHandler implements Handler<RoutingContext> {
   public void handle(RoutingContext context) {
 
     Throwable thrown = context.failure();
-    log.warn(String.format("Request failed,%s",thrown.toString()));
-    if(thrown instanceof UnloginException){
+    log.warn(String.format("Request failed,%s", thrown.toString()));
+    if (thrown instanceof UnloginException) {
       context.response().end(CodeMapping.REQUIRE_LOGIN.toJson().toString());
       return;
     }
     JsonObject response = CodeMapping.UNKNOWN_ERROR.toJson();
-    response.put("trackBack",thrown.toString());
+    response.put("trackBack", thrown.toString());
     context.response().end(response.toString());
   }
 }

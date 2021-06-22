@@ -1,11 +1,13 @@
 package per.hynemankan.vertx.bilibot.handlers.common;
 
 //import io.vertx.core.CompositeFuture;
+
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 //import io.vertx.core.json.JsonObject;
 import io.vertx.redis.client.RedisAPI;
+
 import java.util.Collections;
 
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +71,7 @@ public class HealthChecker {
         Future<String> redisFuture = checkRedis();
         Future<String> mysqlFuture = checkMysql();
         // mysql 健康测试
-        CompositeFuture.all(redisFuture,mysqlFuture).onSuccess(r -> {
+        CompositeFuture.all(redisFuture, mysqlFuture).onSuccess(r -> {
           healthy = true;
           log.debug("Healthy check success!");
           result.complete();
@@ -106,6 +108,7 @@ public class HealthChecker {
     mysqlHealthy = mysqlHealthyStatus;
     setHealthy(STATUS_WORKING.equals(mysqlHealthyStatus));
   }
+
   private static Future<String> checkRedis() {
     return Future.future(result ->
       RedisAPI.api(RedisUtils.getClient()).ping(Collections.singletonList("Healthy check"), send -> {

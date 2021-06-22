@@ -61,26 +61,26 @@ public class Application {
 
   private static void deploy(DeploymentOptions deploymentOptions) {
     Future<Void> mainFuture = deployVertical(MainVerticle.class, deploymentOptions);
-    Future<Void> redisFuture = deployVertical(RedisUtils.class,deploymentOptions);
-    Future<Void> mysqlFuture = deployVertical(MysqlUtils.class,deploymentOptions);
+    Future<Void> redisFuture = deployVertical(RedisUtils.class, deploymentOptions);
+    Future<Void> mysqlFuture = deployVertical(MysqlUtils.class, deploymentOptions);
     Future<Void> messageFuture = deployMessageFetch();
-    CompositeFuture.all(mainFuture,redisFuture,mysqlFuture,messageFuture)
-      .onSuccess(res->{
-        HealthChecker.checkHealthy(vertx).onSuccess(ar->{
+    CompositeFuture.all(mainFuture, redisFuture, mysqlFuture, messageFuture)
+      .onSuccess(res -> {
+        HealthChecker.checkHealthy(vertx).onSuccess(ar -> {
           log.info("health check pass, deploy success!");
-        }).onFailure(ar->{
+        }).onFailure(ar -> {
           log.info("health check fail, deploy fail!");
         });
-      }).onFailure(res->{
+      }).onFailure(res -> {
       log.error("deploy failed!{}", res.getMessage(), res);
     });
 
   }
 
-  private static Future<Void> deployMessageFetch(){
-    return Future.future(result->{
-      DeploymentOptions deploymentOptions= new DeploymentOptions().setInstances(1);
-      vertx.deployVerticle(MessageFetchVerticle.class,deploymentOptions,r->{
+  private static Future<Void> deployMessageFetch() {
+    return Future.future(result -> {
+      DeploymentOptions deploymentOptions = new DeploymentOptions().setInstances(1);
+      vertx.deployVerticle(MessageFetchVerticle.class, deploymentOptions, r -> {
         if (r.succeeded()) {
           result.complete();
         } else {

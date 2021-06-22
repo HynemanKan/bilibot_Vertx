@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN" monitorInterval="30">
 
-    <Properties>
-        <Property name="LOG_PATH" value="./logs"/>
-        <Property name="LOG_FILE" value="./logs/info.log"/>
-        <Property name="LAYOUT"
-                  value="%d{yyyyMMddHHmmss.SSS} | %level | %logger{0} | %message | %ex{5} %n"/>
+  <Properties>
+    <Property name="LOG_PATH" value="./logs"/>
+    <Property name="LOG_FILE" value="./logs/info.log"/>
+    <Property name="LAYOUT"
+              value="%d{yyyyMMddHHmmss.SSS} | %level | %logger{0} | %message | %ex{5} %n"/>
 
-    </Properties>
+  </Properties>
 
-    <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="${LAYOUT}"/>
-        </Console>
-        <RollingFile name="RollingFileInfo" fileName="${LOG_FILE}"
-                     filePattern="${LOG_PATH}/info/info.%d{yyyy-MM-dd}.%i.log.gz">
-            <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="${LAYOUT}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy/>
-                <SizeBasedTriggeringPolicy size="50MB"/>
-            </Policies>
-        </RollingFile>
-    </Appenders>
-    <Loggers>
-        <Logger name="test" level="debug" additivity="false">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="RollingFileInfo"/>
-        </Logger>
-        <Root level="info">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="RollingFileInfo"/>
-        </Root>
-    </Loggers>
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="${LAYOUT}"/>
+    </Console>
+    <RollingFile name="RollingFileInfo" fileName="${LOG_FILE}"
+                 filePattern="${LOG_PATH}/info/info.%d{yyyy-MM-dd}.%i.log.gz">
+      <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY"/>
+      <PatternLayout pattern="${LAYOUT}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="50MB"/>
+      </Policies>
+    </RollingFile>
+  </Appenders>
+  <Loggers>
+    <Logger name="test" level="debug" additivity="false">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="RollingFileInfo"/>
+    </Logger>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="RollingFileInfo"/>
+    </Root>
+  </Loggers>
 </Configuration>
 

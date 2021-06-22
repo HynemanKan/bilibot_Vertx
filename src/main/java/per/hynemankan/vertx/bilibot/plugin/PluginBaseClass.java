@@ -26,37 +26,37 @@ public class PluginBaseClass {
     return TRIGGER;
   }
 
-  public PluginBaseClass(Vertx vertx, WebClient client, MessageSenderContorl messageSenderContorl){
-    this.vertx=vertx;
-    this.client=client;
+  public PluginBaseClass(Vertx vertx, WebClient client, MessageSenderContorl messageSenderContorl) {
+    this.vertx = vertx;
+    this.client = client;
     this.messageSenderContorl = messageSenderContorl;
   }
 
-  public void init(String eventBusChannel ){
+  public void init(String eventBusChannel) {
     vertx.eventBus().<JsonObject>consumer(eventBusChannel).handler(this::handler);
   }
 
-  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId){
-    return Future.future(res->{
+  public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId) {
+    return Future.future(res -> {
       JsonObject response = new JsonObject();
-      messageSenderContorl.sendTextMessage("demo",selfId,targetId);
+      messageSenderContorl.sendTextMessage("demo", selfId, targetId);
       response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
-      response.put(GlobalConstants.VARIATE,variate);
-      response.put(GlobalConstants.SHARE_VARIATE,shareVariate);
+      response.put(GlobalConstants.VARIATE, variate);
+      response.put(GlobalConstants.SHARE_VARIATE, shareVariate);
       res.complete(response);
     });
   }
 
 
-  private void handler(@NotNull Message<JsonObject> message){
+  private void handler(@NotNull Message<JsonObject> message) {
     JsonObject messageBody = message.body().getJsonObject(GlobalConstants.MESSAGE_BODY);
     Integer selfId = messageBody.getInteger("receiver_id");
     Integer targetId = messageBody.getInteger("sender_uid");
     JsonObject variate = message.body().getJsonObject(GlobalConstants.VARIATE);
     JsonObject shareVariate = message.body().getJsonObject(GlobalConstants.SHARE_VARIATE);
-    entry(messageBody,variate,shareVariate,selfId,targetId)
-      .onSuccess(message::reply).onFailure(err->{
-        message.fail(-1,"deal error");
-      });
+    entry(messageBody, variate, shareVariate, selfId, targetId)
+      .onSuccess(message::reply).onFailure(err -> {
+      message.fail(-1, "deal error");
+    });
   }
 }

@@ -2,6 +2,7 @@ package per.hynemankan.vertx.bilibot.utils;
 
 /**
  * 定义eventBus channels
+ *
  * @author hyneman
  * @create 2021-05-27
  */
@@ -19,6 +20,6 @@ public enum EventBusChannels {
   //messageFetch
   START_MESSAGE_FETCH,
   END_MESSAGE_FETCH,
-
+  RAISE_SESSION
 
 }

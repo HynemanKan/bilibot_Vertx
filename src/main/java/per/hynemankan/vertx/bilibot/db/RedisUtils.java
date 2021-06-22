@@ -8,6 +8,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.client.*;
 import lombok.extern.slf4j.Slf4j;
+
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import per.hynemankan.vertx.bilibot.utils.EventBusChannels;
 import per.hynemankan.vertx.bilibot.handlers.common.HealthChecker;
 import per.hynemankan.vertx.bilibot.utils.ConfigurationKeys;
+
 @Slf4j
 public class RedisUtils extends AbstractVerticle {
 
@@ -89,7 +91,6 @@ public class RedisUtils extends AbstractVerticle {
   }
 
   /**
-   *
    * redis初始化
    */
   private void initRedis(Message<String> message) {
@@ -122,7 +123,7 @@ public class RedisUtils extends AbstractVerticle {
           });
           HealthChecker.setRedisHealthy(HealthChecker.STATUS_WORKING);
           client.exceptionHandler(e -> {
-              log.warn("Redis encounters an error", e);
+            log.warn("Redis encounters an error", e);
           });
         } else {
           log.warn(onConnect.cause().getMessage());
@@ -130,6 +131,7 @@ public class RedisUtils extends AbstractVerticle {
         handler.handle(onConnect);
       });
   }
+
   /***
    * 获取分布式锁
    * @param task   eventbus message:锁，请求编号，锁过期时间单位（可选，默认秒），锁过期时间（默认1）
