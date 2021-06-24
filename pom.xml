@@ -24,6 +24,9 @@
 
     <main.verticle>per.hynemankan.vertx.bilibot.verticle.MainVerticle</main.verticle>
     <launcher.class>io.vertx.core.Launcher</launcher.class>
+    <sonar.projectKey>HynemanKan_bilibot_Vertx</sonar.projectKey>
+    <sonar.organization>hynemankan</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <dependencyManagement>
