@@ -24,7 +24,8 @@ public class HelloWorld extends PluginBaseClass {
   public Future<JsonObject> entry(JsonObject messageBody, JsonObject variate, JsonObject shareVariate, Integer selfId, Integer targetId) {
     return Future.future(res -> {
       JsonObject response = new JsonObject();
-      messageSenderContorl.sendTextMessage("demo", selfId, targetId);
+      messageSenderContorl.sendTextMessage("demo", targetId);
+      messageSenderContorl.sendLocalImageMessage("images/test.jpg",targetId);
       response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
       response.put(GlobalConstants.VARIATE, variate);
       response.put(GlobalConstants.SHARE_VARIATE, shareVariate);
