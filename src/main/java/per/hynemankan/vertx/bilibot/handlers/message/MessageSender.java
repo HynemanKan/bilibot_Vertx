@@ -98,9 +98,11 @@ public class MessageSender {
     return sendMessage(webClient,messageBody,1,sender,receiver);
   }
 
-  public static Future<Void> sendImageMessage(WebClient webClient, String imageUrl, Integer sender, Integer receiver){
+  public static Future<Void> sendImageMessage(WebClient webClient, String imageUrl,Integer width,Integer height, Integer sender, Integer receiver){
     JsonObject messageBody = new JsonObject();
     messageBody.put("url", imageUrl);
+    messageBody.put("width",width.toString());
+    messageBody.put("height",height.toString());
     return sendMessage(webClient,messageBody,2,sender,receiver);
   }
 

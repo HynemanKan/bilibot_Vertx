@@ -70,7 +70,9 @@ public class MessageFetchVerticle extends AbstractVerticle {
 
   private void startMessageFetch(Message<String> message) {
     if (!messageFetchStatus) {
-      messageSenderContorl.startTimer();
+      messageSenderContorl.setSelfId()
+        .onFailure(err->log.warn(err.getMessage()))
+        .onSuccess(res->messageSenderContorl.startTimer());
       this.timerId = vertx.setTimer(GlobalConstants.MESSAGE_FETCH_PERIOD, this::checkUnreadMessage);
       message.reply(true);
     } else {

@@ -20,6 +20,7 @@ public class FailureHandler implements Handler<RoutingContext> {
       context.response().end(CodeMapping.REQUIRE_LOGIN.toJson().toString());
       return;
     }
+    log.warn(thrown.toString());
     JsonObject response = CodeMapping.UNKNOWN_ERROR.toJson();
     response.put("trackBack", thrown.toString());
     context.response().end(response.toString());

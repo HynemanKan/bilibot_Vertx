@@ -43,8 +43,7 @@ public class ImageUpload {
             response.fail(new BiliApiException(body.toString()));
             return;
           }
-          log.info(body.toString());
-          response.complete(body);
+          response.complete(body.getJsonObject("data"));
         });
       });
     });
@@ -57,7 +56,8 @@ public class ImageUpload {
   }
 
   private static String getFileType(String fileName) {
-    String[] temp = fileName.split(".");
+    String[] temp = fileName.split("\\.");
+    log.info(temp.toString());
     return temp[temp.length - 1];
   }
 }

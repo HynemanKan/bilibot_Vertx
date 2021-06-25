@@ -30,10 +30,10 @@ public class RedirectTest extends PluginBaseClass {
     return Future.future(res -> {
       JsonObject response = new JsonObject();
       if (messageBody.containsKey(GlobalConstants.JUMP_BACK)) {
-        messageSenderContorl.sendTextMessage("Jump back", selfId, targetId);
+        messageSenderContorl.sendTextMessage("Jump back", targetId);
         response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_FINISH.name());
       } else {
-        messageSenderContorl.sendTextMessage("call redirect", selfId, targetId);
+        messageSenderContorl.sendTextMessage("call redirect", targetId);
         response.put(GlobalConstants.PLUGIN_STATE, PluginStatus.MESSAGE_LOOP_REDIRECT.name());
         response.put(GlobalConstants.REDIRECT_TARGET, HelloWorld.EVENT_BUS_CHANNEL);
       }

@@ -50,9 +50,11 @@ public class MainVerticle extends AbstractVerticle {
       routingContext.response().sendFile("pages/login.html")
     ).failureHandler(failureHandler);
     router.get("/test").handler(routingContext -> {
-      ImageUpload.puloadImageByPath(client, "images/", "test.jpg")
-        .onFailure(routingContext::fail).onSuccess(res -> routingContext.response().end(res.toString()));
-    });
+      ImageUpload.puloadImageByPath(client, "images/test.jpg", "test.jpg")
+        .onFailure(routingContext::fail).onSuccess(res -> {
+          routingContext.response().end(res.toString());
+        });
+    }).failureHandler(failureHandler);
     // 启动Http server
     vertx.createHttpServer().requestHandler(router).listen(GlobalConstants.HTTP_PORT, r -> {
       if (r.succeeded()) {

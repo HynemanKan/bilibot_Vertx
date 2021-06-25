@@ -21,7 +21,7 @@ public class GetBaseInfo {
     return Future.future(res -> {
       URL url;
       try {
-        url = new URL(GlobalConstants.BILI_INFO_BASE_INFO_API);
+      url = new URL(GlobalConstants.BILI_INFO_BASE_INFO_API);
       } catch (MalformedURLException e) {
         res.fail(new WebClientException("Got illegal Url!", e));
         return;
@@ -29,7 +29,6 @@ public class GetBaseInfo {
       HttpRequest<Buffer> request = webClient.get(GlobalConstants.BILI_PORT, url.getHost(), url.getPath());
       HeaderAdder.headerAdd(request);
       CookiesManager.headCookiesAdder(request).onSuccess(ar -> {
-        log.info(request.headers().toString());
         request.send().onSuccess(response -> {
           JsonObject jsonBody = response.bodyAsJsonObject();
           if (jsonBody.getInteger("code") == -101) {
