@@ -281,7 +281,8 @@ public class MessageFetchVerticle extends AbstractVerticle {
         delSession(redisKey);
         break;
       default:
-        log.warn(String.format("Session %s Unknown plugin status", redisKey));
+        log.warn(String.format("Session %s Unknown plugin status %s",
+          redisKey,pluginResponse.getString(GlobalConstants.PLUGIN_STATE)));
         delSession(redisKey);
     }
   }
